@@ -21,7 +21,14 @@
 {
 	color:	red;
 }
-
+GtkSeparator.horizontal
+{
+color:alpha(#000, 0.6);
+}
+.separator.vertical {
+    color: alpha(black, 0.6);
+-GtkWidget-wide-separators: false;
+}
 GtkListBox.babe
 {
 	background-color:alpha(#333, 0.9);
@@ -41,7 +48,7 @@ GtkListBox.babe
 .options_icon
 { 
 	color:alpha(white, 0.8);
-	icon-shadow: 0 1px alpha (alpha (#333, 0.9), 0.40);
+	icon-shadow: 0 1px alpha(#000, 0.5);
 }
 
 

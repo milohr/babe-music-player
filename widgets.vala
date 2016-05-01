@@ -159,17 +159,31 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		set_babe_playback_box();
 		set_babe_style();	
 		
+		//open music event
+		open_icon = new Gtk.Image.from_icon_name("folder-open-symbolic", Gtk.IconSize.MENU);
+		open_event = new Gtk.EventBox();
+		open_event.add(open_icon);
+		
+		open_icon.set_tooltip_text ("Open...");
+		open_event.button_press_event.connect (() => {					
+					on_open();
+					return true;
+			
+		});
+		
+		
 		//header box
 		Gtk.Fixed fixed = new Gtk.Fixed ();
 		options= new Gtk.Image.from_icon_name("go-jump-symbolic", Gtk.IconSize.MENU);
 		
 		options.get_style_context().add_class("options_icon");
+		open_icon.get_style_context().add_class("options_icon");
 		var options_event=new Gtk.EventBox();
 		options_event.set_tooltip_text("Options");
 		options_event.add(options);		
 		//playback box
 		playback_box = new Gtk.Box(Gtk.Orientation.VERTICAL,10);
-		//h_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL);
+		h_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL);
 		playback_box.add(playback_buttons);
 		playback_box.add(progressbar);
 		//playback_box.add(h_separator);
@@ -182,6 +196,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		
 		fixed.put(cover,0,0);
 		fixed.put(options_event,180,5);
+		fixed.put(open_event,5,5);
 		fixed.put(playback_box_event,45, 150);
 
 		art_header = new Gtk.Stack();//
@@ -199,6 +214,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		media_box.pack_end(media_stack,true,true,0);
 		//MAIN CONTAINER: playbackbox->main view->statusbar
 		main_container = new Gtk.Box(Gtk.Orientation.VERTICAL,0);
+		main_container.add(h_separator);
 		main_container.add(media_box);
 		main_container.pack_end(statusbar,false,false,0);		
 		
@@ -459,7 +475,6 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		//events on the statusbar
 		shuffle_event = new Gtk.EventBox();
 		add_playlist_event = new Gtk.EventBox();		
-		open_event = new Gtk.EventBox();
 		hide_event = new Gtk.EventBox();
 				
 		//components		
@@ -469,9 +484,9 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		//main info label		
 		status_label = new Gtk.Label("");
 		status_label.set_line_wrap(true);
-		status_label.set_max_width_chars (13);
+		status_label.set_max_width_chars (16);
 		status_label.set_ellipsize (Pango.EllipsizeMode.END);
-		status_label.move_cursor(MovementStep.VISUAL_POSITIONS, 100, false);
+		//status_label.move_cursor(MovementStep.VISUAL_POSITIONS, 100, false);
 		status_label.set_lines(1);		
 		
 		//set playlist entry
@@ -530,17 +545,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 			
 		});
 		
-		//open music event
-		open_icon = new Gtk.Image.from_icon_name("folder-open-symbolic", Gtk.IconSize.MENU);
-		open_event.add(open_icon);
-		
-		open_icon.set_tooltip_text ("Open...");
-		open_event.button_press_event.connect (() => {					
-					on_open();
-					return true;
-			
-		});
-		
+				
 		//hide event
 		hide_icon= new Gtk.Image.from_icon_name("go-up-symbolic", Gtk.IconSize.MENU);
 		hide_event.add(hide_icon);
@@ -554,14 +559,15 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 						case 0: 
 							this.set_keep_above(true); 
 							media_box.hide();
-							//h_separator.hide();
+							h_separator.hide();
 							hide_icon.set_tooltip_text ("Go Mini");
 							hide_icon.set_from_icon_name("go-down-symbolic", Gtk.IconSize.MENU);
 							mini=1;
 						break;
 						
 						case 1:
-							this.set_keep_above(false); 
+							this.set_keep_above(false);
+							h_separator.show(); 
 							media_box.show();
 							hide_icon.set_from_icon_name("go-up-symbolic", Gtk.IconSize.MENU);
 							hide_icon.set_tooltip_text ("Go Maxi");
@@ -574,7 +580,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		statusbar.pack_start(add_playlist_event);
 		statusbar.pack_start(shuffle_event);		
 		statusbar.set_center_widget(status_label);
-		statusbar.pack_end(open_event);		
+		//statusbar.pack_end(open_event);		
 		statusbar.pack_end(hide_event);		
 		//statusbar.pack_start(shuffle_event);
 	}
