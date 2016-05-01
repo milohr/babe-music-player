@@ -1,0 +1,114 @@
+/*The Babe stylesheet Camilo Higuita 2016*/
+
+/* Copyright 2016 Camilo Higuita(milohr)
+*
+* This file is part of Babe Music Player.
+*
+* Babe is free software: you can redistribute it
+* and/or modify it under the terms of version 3 of the 
+* GNU General Public License as published by the Free Software Foundation.
+*
+* Babe is distributed in the hope that it will be
+* useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+* Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with Babe. If not, see http://www.gnu.org/licenses/.
+*/
+
+.babed:checked
+{
+	color:	red;
+}
+
+GtkListBox.babe
+{
+	background-color:alpha(#333, 0.9);
+	color:white;
+}
+
+.playback_box
+{
+	background-color:alpha (white, 0.9);
+	border-radius:5px;
+	color:gray;
+	border: 1px solid alpha (#000, 0.35);
+	box-shadow: inset 0 0 0 1px alpha (#000, 0.03),
+					0 1px 0 0 alpha (@bg_highlight_color, 0.30);
+}
+
+.options_icon
+{ 
+	color:alpha(white, 0.8);
+	icon-shadow: 0 1px alpha (alpha (#333, 0.9), 0.40);
+}
+
+
+GtkListBox.babe .button GtkImage,
+GtkListBox.babe .button
+{
+	color:white;
+	icon-shadow: 0 1px #000;
+	background-color:transparent;
+	border:none;
+	box-shadow:none;
+	padding:2px;
+}
+
+GtkListBox.babe .button:selected
+{
+	background-color:@selected_bg_color;
+	color:white;
+	border-radius:0px;
+}
+
+GtkListBox.babe :selected:backdrop
+{
+	background-color:alpha(#333, 0.99);
+	color:white;
+}
+
+.entry
+{
+	background-color:transparent;
+	border: none;
+	box-shadow:none;
+}
+
+GtkPopover.babe-pop 
+{
+	background-color:@bg_color;
+}
+
+.titlebar
+{
+	border-radius: 0px;
+}
+.csd
+{
+	 border-top-left-radius: 0px;
+	 border-top-right-radius: 0px;
+}
+
+.window-frame
+{
+	box-shadow: 0 0 0 1px alpha (#000, 0.35),
+				0 12px 30px -6px alpha (@selected_bg_color, 0.80);
+}
+
+ .scale.slider
+ {
+    border: none;
+    border-radius: 0;
+	background-color:transparent;
+    background-image: none;                        
+    box-shadow: none;
+}
+
+.scale.trough 
+{
+    border-radius: 0;
+    border-width: 1px 1px 1px 1px;
+}
+
