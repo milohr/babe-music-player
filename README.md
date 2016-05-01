@@ -2,6 +2,7 @@
 Babe Music Player - tiny desktop player
 
 To compile get into the folder and run:
+
 valac --pkg gstreamer-1.0 --pkg gtk+-3.0 --pkg taglib_c --pkg gee-1.0 --pkg libxml-2.0 --pkg libsoup-2.4 babe.vala stream.vala lastfm.vala widgets.vala
 
 Soon I'll make it easier to compile and create some testing packages.
