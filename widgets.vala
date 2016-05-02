@@ -36,7 +36,6 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	public string title="";
 	public string artist="";
 	public string album="";
-	
 
 	//headerbar
 	public Gtk.Image cover;//here the album artwork
@@ -354,10 +353,10 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		playlist_list_scroll = new ScrolledWindow (null, null);
 		queue_list_scroll = new ScrolledWindow (null, null);
 		
-		main_list = new Gtk.ListStore (4, typeof (string), typeof (string), typeof (string), typeof (string));
-		babes_list= new Gtk.ListStore (4, typeof (string), typeof (string), typeof (string), typeof (string));
-		playlist_list= new Gtk.ListStore (4, typeof (string), typeof (string), typeof (string), typeof (string));
-		queue_list= new Gtk.ListStore (4, typeof (string), typeof (string), typeof (string), typeof (string));
+		main_list = new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
+		babes_list= new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
+		playlist_list= new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
+		queue_list= new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
 		
 		main_list_view= new Gtk.TreeView.with_model (main_list);
 		babes_list_view= new Gtk.TreeView.with_model (babes_list);
@@ -368,7 +367,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		//main_list_view.insert_column_with_attributes (-1, "Artist", main_list_cell, "text", 1);	//hide it for now until i've found a better solution
 		
 		babes_list_view.insert_column_with_attributes (-1, "Title", babes_list_cell, "text", 0);
-		babes_list_view.insert_column_with_attributes (-1, "Artist", babes_list_cell, "text", 1);	
+		//babes_list_view.insert_column_with_attributes (-1, "Artist", babes_list_cell, "text", 1);	
 		
 		playlist_list_view.insert_column_with_attributes (-1, "Title", playlist_list_cell, "text", 0);
 		playlist_list_view.insert_column_with_attributes (-1, "Artist", playlist_list_cell, "text", 1);
@@ -611,7 +610,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 			foreach (unowned string uri in uris) 
 			{
 				main_list.append (out iter);
-				main_list.set (iter, 0, get_song_info(uri).tag.title, 1, get_song_info(uri).tag.artist, 2, uri, 3,get_song_info(uri).tag.album);
+				main_list.set (iter, 0, get_song_info(uri).tag.title+"\nby "+ get_song_info(uri).tag.artist, 1, get_song_info(uri).tag.artist, 2, uri, 3,get_song_info(uri).tag.album,4,get_song_info(uri).tag.title);
 			}
        
 			media_stack.set_visible_child_name("list");
@@ -693,7 +692,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	
 	public void list_selected(Gtk.TreeView view)
 	{
-		//view.set_grid_lines (TreeViewGridLines.BOTH);
+		view.set_grid_lines (TreeViewGridLines.HORIZONTAL);
 		view.set_reorderable(true);
 		view.set_headers_visible(false);
 				
@@ -707,7 +706,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		if (selection.get_selected(out model, out iter)) 
 		{
 			model.get (iter,
-                            0, out title,
+                            4, out title,
 							1, out artist,
 							2, out song,
 							3, out album);
@@ -783,7 +782,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		}	
 			
 		model.get(iter,
-                        0, out title,
+                        4, out title,
 						1, out artist,
 						2, out song,
 						3, out album);
@@ -806,7 +805,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		}	
 						
 		model.get (iter,
-                        0, out title,
+                        4, out title,
 						1, out artist,
 						2, out song,
 						3, out album);
@@ -814,7 +813,33 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		update_status();			
 		print("previous song<-");
 
-	}	
+	}
+	
+	public void get_random_song(Gtk.TreeModel liststore)
+	{
+		bool random;
+		int n;
+		var iter_random = new Gtk.TreeIter();
+		n=liststore.iter_n_children(iter);
+		babe_icon.set_state_flags(StateFlags.NORMAL, true);
+
+		random = liststore.iter_nth_child (out iter_random, iter, n);
+					
+		if(random==false)
+		{
+			random= liststore.get_iter_first(out iter);
+		}	
+						
+		model.get (iter_random,
+                        4, out title,
+						1, out artist,
+						2, out song,
+						3, out album);
+		babe_stream.uri(song);
+		update_status();			
+		print("previous song<-");
+
+	}		
 	
 	public void add_babe(Gtk.TreeIter iter2)	
 	{
@@ -823,7 +848,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	    file.puts (song+"\n");
 	    
 	    babes_list.append (out iter2);
-		babes_list.set (iter2, 0, get_song_info(song).tag.title, 1, get_song_info(song).tag.artist, 2, song,3,get_song_info(song).tag.album);
+		babes_list.set (iter2, 0, get_song_info(song).tag.title+"\nby "+ get_song_info(song).tag.artist, 1, get_song_info(song).tag.artist, 2, song,3,get_song_info(song).tag.album,4,get_song_info(song).tag.title);
 	    
 		status_label.label="Babe added!";
 		GLib.Timeout.add_seconds(3, (SourceFunc) this.update_status);
@@ -860,7 +885,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
         while ((line = dis.read_line (null)) != null) {
             //stdout.printf ("%s\n", line);
 			babes_list.append (out iter);
-			babes_list.set (iter, 0, get_song_info(line).tag.title, 1, get_song_info(line).tag.artist, 2, line, 3,get_song_info(line).tag.album);		
+			babes_list.set (iter, 0, get_song_info(line).tag.title+"\nby "+ get_song_info(line).tag.artist, 1, get_song_info(line).tag.artist, 2, line, 3,get_song_info(line).tag.album,4, get_song_info(line).tag.title);		
 			c++;
         }		
 		babe_babes.set_tooltip_text (c.to_string()+" Babes <3");

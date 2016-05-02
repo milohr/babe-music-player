@@ -91,6 +91,7 @@ GtkPopover.babe-pop
 .titlebar
 {
 	border-radius: 0px;
+	-gtk-image-effect: none;
 }
 .csd
 {
