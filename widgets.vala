@@ -428,12 +428,13 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		media_stack.set_visible_child_name("add");
 		//get the babe list
 		get_babe_list();
-		
+		list_selected(main_list_view);	
 		//catch sidebar selection
 		babe_sidebar.row_activated.connect ((row => {		
 			if(row==babe_list)
 			{
 				babe_icon_event.set_sensitive(true);
+				
 				print ("babe_list");
 				media_stack.set_visible_child_name("add");		
 			}
@@ -625,7 +626,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 			}
 		}));
 		
-		list_selected(main_list_view);	 
+		 
 	}
 		
 	public TagLib.File get_song_info(string uri)
