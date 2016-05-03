@@ -31,6 +31,15 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	public int c=0;	
 	public int mini=0;
 	public int shuffle=0;
+	public string check="";
+		string album_art;
+
+	//control view mode
+	public int list_int=0;
+	public int info_int=0;
+	public int playlist_int=0;
+	public int babe_int=0;
+	public int queue_int=0;
 	
 	public string song;
 	public string title="";
@@ -315,19 +324,25 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		babe_sidebar.insert(settings_event,5);
 		
 		var button1=new Gtk.Button.with_label("Clean Babes");
+		var button2=new Gtk.Button.with_label("Clean List");
 		
 		settings_box=new Gtk.Box(Gtk.Orientation.VERTICAL,0);
 		settings_box.add(button1);
+		settings_box.add(button2);
 		
 		settings_popover=new Gtk.Popover(settings_event);
 		settings_popover.add(settings_box);
 		
 		button1.clicked.connect(clean_babe_list); //empty the babe'd list
+		button2.clicked.connect(() => {					
+			babe_stream.pause_song();
+
+			//main_list.clear();
+		});//empty the babe'd list
 		
 		settings_event.button_press_event.connect (() => {					
 			settings_popover.show_all();
 			return true;
-			
 		});
 		
 		set_babe_lists();
@@ -434,36 +449,42 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 			{
 				babe_icon_event.set_sensitive(true);
 				
-				print ("babe_list");
-				media_stack.set_visible_child_name("add");		
+				print ("babe_list\n");
+				media_stack.set_visible_child_name("add");
+				list_int=1;		
 			}
 			if(row==babe_info)		
 			{	
 				//set_babe_cover(get_babe_head());
-				print ("babe_info");
+				print ("babe_info\n");
 				//media_stack.set_visible_child_name("list");
 				status_label.label="Info not avalible";
 				media_stack.set_visible_child_name("info");
 				GLib.Timeout.add_seconds(3, (SourceFunc) this.update_status);
+				info_int=1;		
+
 			}
 			if(row==babe_playlist)
 			{
-				print ("babe_playlist");
+				print ("babe_playlist\n");
 				media_stack.set_visible_child_name("playlist");
 				status_label.label="000 Playlists";
 				GLib.Timeout.add_seconds(3, (SourceFunc) this.update_status);
+				playlist_int=1;		
 			}	
 			if(row==babe_babes)
 			{
 				//get_babe_list();//awful solution
-				print ("babe_babes");	
+				print ("babe_babes\n");	
 				babe_icon_event.set_sensitive(false);	
-				media_stack.set_visible_child_name("babes");				
+				media_stack.set_visible_child_name("babes");
+				babe_int=1;				
 			}		
 			if(row==babe_queue)
 			{
-				print ("babe_queue");		
-				media_stack.set_visible_child_name("queue");		
+				print ("babe_queue\n");		
+				media_stack.set_visible_child_name("queue");
+				queue_int=1;		
 			}
 		}));
 	}	
@@ -500,7 +521,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
                 
 		add_playlist_entry.activate.connect (() => {
 			string str = add_playlist_entry.get_text ();
-			stdout.printf ("%s\n", str);
+			//stdout.printf ("%s\n", str);
 			add_playlist_entry.set_text("");
 			status_label.label="Playlist Created";
 			GLib.Timeout.add_seconds(3, (SourceFunc) this.update_status);
@@ -605,7 +626,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		if (chooser.run () == Gtk.ResponseType.ACCEPT) 
 		{
 			SList<string> uris = chooser.get_uris ();
-			stdout.printf ("Selection on_open:\n");
+			//stdout.printf ("Selection on_open:\n");
 			
 			foreach (unowned string uri in uris) 
 			{
@@ -620,7 +641,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		babe_sidebar.row_activated.connect ((row => {		
 			if(row==babe_list)
 			{
-				print ("babe_list");
+				print ("babe_list\n");
 				media_stack.set_visible_child_name("list");
 			}
 		}));
@@ -651,23 +672,30 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	
 	public string get_babe_cover()
 	{
-		string album_art;
-		print(artist+" "+album);
-		
-		if(album==""||artist=="")
+		if(check==album+artist)
 		{
-			return null;
+			print("We already got that album cover\n");
+			return album_art;
 		}else
-		{
-			album_art=artwork.get_art_uri(album, artist);
-			if(album_art==null)
+		{		
+			print("Getting album art for: "+album+" by "+artist+"\n");
+			if(album==""||artist=="")
 			{
 				return null;
 			}else
 			{
-				return album_art;
+				check=album+artist;
+				album_art=artwork.get_art_uri(album, artist);
+				if(album_art==null)
+				{
+					return null;
+				}else
+				{
+					return album_art;
+				}
 			}
-		}		
+			
+		}	
 	}
 	
 	public string get_babe_head()
@@ -789,7 +817,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	
 		babe_stream.uri(song);
 		update_status();
-		print("next song->");
+		print("Playing next song->\n");
 	}
 	
 	public void get_previous_song(Gtk.TreeModel liststore)
@@ -811,7 +839,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 						3, out album);
 		babe_stream.uri(song);
 		update_status();			
-		print("previous song<-");
+		print("<-Playing previous song\n");
 
 	}
 	
@@ -873,9 +901,10 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		//babes_list.clear();
 		//var file = File.new_for_path (".Babes.txt");
 		int c=0;
+		int d=0;
 		var file = GLib.File.new_for_path (".Babes.txt");
 		
-		if (!(file.query_exists ())) 
+		if (!(file.query_exists())) 
 		{
            file.create (FileCreateFlags.NONE);
         }		           		
@@ -884,9 +913,20 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
         // Read lines until end of file (null) is reached
         while ((line = dis.read_line (null)) != null) {
             //stdout.printf ("%s\n", line);
+            file=GLib.File.new_for_uri(line);
+            if(file.query_exists())
+            {
 			babes_list.append (out iter);
 			babes_list.set (iter, 0, get_song_info(line).tag.title+"\nby "+ get_song_info(line).tag.artist, 1, get_song_info(line).tag.artist, 2, line, 3,get_song_info(line).tag.album,4, get_song_info(line).tag.title);		
 			c++;
+			}else
+			{
+				print("File missing: "+line+"\n");
+				if(babe_int==1)
+				{
+				add_playlist_popover.show_all();
+				}
+			}
         }		
 		babe_babes.set_tooltip_text (c.to_string()+" Babes <3");
 		list_selected(babes_list_view);
