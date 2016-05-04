@@ -48,9 +48,10 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 
 	//headerbar
 	public Gtk.Image cover;//here the album artwork
-	public Gtk.Stack art_header;
+	public Gtk.EventBox art_header;
 	public Gtk.Popover playbox_popover;//still unused
 	public Gtk.EventBox playback_box_event;
+	public Gtk.Revealer playback_box_revealer;
 	public Gtk.Box playback_box;
 	public Gtk.Image options;
 
@@ -150,6 +151,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	public BabeWindow()
 	{
 		//ventana.title = "Babe...";
+		
 		this.window_position = WindowPosition.CENTER;
 		this.set_resizable(false);
 		//this.set_decorated(false);
@@ -162,6 +164,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		       		
         babe_stream=new Stream(); //this is the main pipeline for streaming
         artwork = new LastFm();
+        
 		set_babe_sidebar();
 		set_babe_statusbar();
 		set_babe_playback_box();
@@ -170,25 +173,23 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		//open music event
 		open_icon = new Gtk.Image.from_icon_name("folder-open-symbolic", Gtk.IconSize.MENU);
 		open_event = new Gtk.EventBox();
-		open_event.add(open_icon);
-		
+		open_event.add(open_icon);		
 		open_icon.set_tooltip_text ("Open...");
 		open_event.button_press_event.connect (() => {					
 					on_open();
-					return true;
-			
+					return true;			
 		});
 		
 		
 		//header box
-		Gtk.Fixed fixed = new Gtk.Fixed ();
-		options= new Gtk.Image.from_icon_name("go-jump-symbolic", Gtk.IconSize.MENU);
-		
+		options= new Gtk.Image.from_icon_name("go-jump-symbolic", Gtk.IconSize.MENU);		
 		options.get_style_context().add_class("options_icon");
 		open_icon.get_style_context().add_class("options_icon");
 		var options_event=new Gtk.EventBox();
 		options_event.set_tooltip_text("Options");
-		options_event.add(options);		
+		options_event.add(options);	
+		
+			
 		//playback box
 		playback_box = new Gtk.Box(Gtk.Orientation.VERTICAL,10);
 		h_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL);
@@ -198,19 +199,33 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		playback_box.set_spacing(-1);
 
 		playback_box_event=new Gtk.EventBox();
+		playback_box_event.add(playback_box);
 		playback_box_event.get_style_context().add_class("playback_box");
-
-		playback_box_event.add(playback_box);	
 		
+		playback_box_revealer=new Gtk.Revealer();
+		playback_box_revealer.set_transition_type(RevealerTransitionType.CROSSFADE);
+		//playback_box_revealer.set_transition_duration(300);
+		playback_box_revealer.add(playback_box_event);	
+		
+		
+		Gtk.Fixed fixed = new Gtk.Fixed ();
 		fixed.put(cover,0,0);
 		fixed.put(options_event,180,5);
 		fixed.put(open_event,5,5);
-		fixed.put(playback_box_event,45, 150);
-
-		art_header = new Gtk.Stack();//
-        art_header.set_vexpand(true);
-        art_header.add_named(fixed, "head_cover");
+		fixed.put(playback_box_revealer,45, 150);
+		
+		
+		
+		art_header = new Gtk.EventBox();//
+		playback_box_event.add_events (Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK);
+		playback_box_event.enter_notify_event.connect (reveal);
+        //art_header.leave_notify_event.connect (hide);
+        //art_header.set_vexpand(true);
         
+        art_header.add(fixed);
+        art_header.add_events (Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK);
+		art_header.enter_notify_event.connect (reveal);
+        art_header.leave_notify_event.connect (hide);
         //art_header.set_visible_child_name("head_cover");        
         this.set_titlebar(art_header); //this sets the album art as headerbar		
 
@@ -225,9 +240,22 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		main_container.add(h_separator);
 		main_container.add(media_box);
 		main_container.pack_end(statusbar,false,false,0);		
-		
+
 		//manage the container
 		this.add(main_container);
+	}
+	
+	
+	public bool reveal()
+	{
+		playback_box_revealer.set_reveal_child(true);
+		return true;
+	}
+	
+	public bool hide()
+	{
+		playback_box_revealer.set_reveal_child(false);
+		return true;
 	}
 	
 	public void set_babe_playback_box()
@@ -447,7 +475,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		babe_sidebar.row_activated.connect ((row => {		
 			if(row==babe_list)
 			{
-				babe_icon_event.set_sensitive(true);
+				//babe_icon_event.set_sensitive(true);
 				
 				print ("babe_list\n");
 				media_stack.set_visible_child_name("add");
@@ -476,7 +504,6 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 			{
 				//get_babe_list();//awful solution
 				print ("babe_babes\n");	
-				babe_icon_event.set_sensitive(false);	
 				media_stack.set_visible_child_name("babes");
 				babe_int=1;				
 			}		
@@ -520,7 +547,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
                 });
                 
 		add_playlist_entry.activate.connect (() => {
-			string str = add_playlist_entry.get_text ();
+			//string str = add_playlist_entry.get_text ();
 			//stdout.printf ("%s\n", str);
 			add_playlist_entry.set_text("");
 			status_label.label="Playlist Created";
@@ -579,6 +606,8 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 					{
 						case 0: 
 							this.set_keep_above(true); 
+									playback_box_revealer.set_reveal_child(false);
+
 							media_box.hide();
 							h_separator.hide();
 							hide_icon.set_tooltip_text ("Go Mini");
@@ -659,8 +688,8 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	
 	public void set_babe_cover(string cover_file)
 	{	
-		if(cover_file==null){	
-			cover.set_from_file("img/babe.png");
+		if(cover_file=="img/babe.png"){	
+			cover.set_from_file(cover_file);
 		}else
 		{
 			var pixbuf=artwork.download_cover_art(cover_file);			 
@@ -672,6 +701,8 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 	
 	public string get_babe_cover()
 	{
+		string default_cover="img/babe.png";
+		
 		if(check==album+artist)
 		{
 			print("We already got that album cover\n");
@@ -681,14 +712,22 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 			print("Getting album art for: "+album+" by "+artist+"\n");
 			if(album==""||artist=="")
 			{
-				return null;
+				print("Not enought info to get the album cover. So let's try sth here'\n");
+				album_art=artwork.get_art_uri(title, artist);
+				if(album_art==null)
+				{
+					return default_cover;
+				}else
+				{
+					return album_art;
+				}
 			}else
 			{
 				check=album+artist;
 				album_art=artwork.get_art_uri(album, artist);
 				if(album_art==null)
 				{
-					return null;
+					return default_cover;
 				}else
 				{
 					return album_art;
@@ -704,13 +743,13 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		
 		if(artist=="")
 		{
-			return null;
+			return "babe.png";
 		}else
 		{
 			artist_head=artwork.get_artist_uri(artist);
 			if(artist_head==null)
 			{
-				return null;
+			return "babe.png";
 			}else
 			{
 				return artist_head;
@@ -723,7 +762,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		view.set_grid_lines (TreeViewGridLines.HORIZONTAL);
 		view.set_reorderable(true);
 		view.set_headers_visible(false);
-				
+		
         var selection = view.get_selection ();
 		selection.changed.connect (on_changed);		
 	}	
@@ -762,6 +801,7 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		babe_stream.uri(song);
 		update_status();
 		enable_playbox_events();
+		playback_box_revealer.set_reveal_child(true);
 		progressbar.set_sensitive(true);
 		GLib.Timeout.add (1000, (SourceFunc) this.update_media_controls);
 	}	
@@ -816,6 +856,8 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 						3, out album);
 	
 		babe_stream.uri(song);
+				play_icon.set_from_icon_name("media-playback-pause-symbolic", Gtk.IconSize.MENU);
+
 		update_status();
 		print("Playing next song->\n");
 	}
@@ -838,6 +880,8 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 						2, out song,
 						3, out album);
 		babe_stream.uri(song);
+				play_icon.set_from_icon_name("media-playback-pause-symbolic", Gtk.IconSize.MENU);
+
 		update_status();			
 		print("<-Playing previous song\n");
 
@@ -864,6 +908,8 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 						2, out song,
 						3, out album);
 		babe_stream.uri(song);
+				play_icon.set_from_icon_name("media-playback-pause-symbolic", Gtk.IconSize.MENU);
+
 		update_status();			
 		print("previous song<-");
 
@@ -901,7 +947,6 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		//babes_list.clear();
 		//var file = File.new_for_path (".Babes.txt");
 		int c=0;
-		int d=0;
 		var file = GLib.File.new_for_path (".Babes.txt");
 		
 		if (!(file.query_exists())) 
