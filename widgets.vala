@@ -21,58 +21,58 @@ using Soup;
 using BabeStream;
 using CoverArt;
 
-namespace BabeWidgets {	
-
-	
+namespace BabeWidgets {
+		
 	enum Target {
-    INT32,
-    STRING,
-    URILIST,
-    ROOTWIN
-}
- const TargetEntry[] target_list = {
-    { "INTEGER",    0, Target.INT32 },
-    { "STRING",     0, Target.STRING },
-    { "text/uri-list", 0, Target.URILIST },
-    { "application/x-rootwindow-drop", 0, Target.ROOTWIN }
-};
+		INT32,
+		STRING,
+		URILIST,
+		ROOTWIN
+	}
+	const TargetEntry[] target_list = {
+		{ "INTEGER",    0, Target.INT32 },
+		{ "STRING",     0, Target.STRING },
+		{ "text/uri-list", 0, Target.URILIST },
+		{ "application/x-rootwindow-drop", 0, Target.ROOTWIN }
+	};
 	
-public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
+public class BabeWindow : Gtk.Window //creates main window with all widgets alltogether...not ideal but...
 {  	
 	public Stream babe_stream;
 	public LastFm artwork;
 	
-	public int c=0;	
-	public int mini=0;
-	public int shuffle=0;
-	public string check="";
-		string album_art;
+	public int c=0;	//number of songs on the babed list
+	public int mini=0; //state of the mini/maxi view
+	public int shuffle=0; //whether the playback is on shuffle(0) or not(1)
+	public string check=""; //placeholder to check if we already have an album cover art
+	public string album_art; //placeholder to check if we already have an album cover art
+	public Gdk.Pixbuf cover_pixbuf; //the pixbuf of the coverart of the current song to use when wanted or needed 
 
-	//control view mode
+	//control view mode. pretty useless right now
 	public int list_int=0;
 	public int info_int=0;
 	public int playlist_int=0;
 	public int babe_int=0;
 	public int queue_int=0;
 	
-	public string song;
-	public string title="";
-	public string artist="";
-	public string album="";
+	public string song; //this is the main uri to send to the streamer and start playback
+	public string title=""; //title of current song
+	public string artist=""; //artist of the current song
+	public string album=""; //album of the current song
 
 	//headerbar
 	public Gtk.Image cover;//here the album artwork
 	public Gtk.EventBox art_header;
 	public Gtk.Popover playbox_popover;//still unused
 	public Gtk.EventBox playback_box_event;
-	public Gtk.Revealer playback_box_revealer;
+	public Gtk.Revealer playback_box_revealer; //reveals the playback actions box
 	public Gtk.Box playback_box;
 	public Gtk.Image options;
 
 	//main containers
 	public Gtk.Box main_container;
 	public Gtk.Box media_box;
-	public Gtk.Separator h_separator;//unused
+	public Gtk.Separator h_separator;
 	
 	//view modes	
 	public Gtk.Stack media_stack;
@@ -171,56 +171,58 @@ public class BabeWindow : Gtk.Window //clase Ventana que pertenece a Gtk.Window
 		//this.set_decorated(false);
 
 		this.set_default_size (800, 800);
-		this.destroy.connect(Gtk.main_quit); // señal para cerrar la ventana
+		this.destroy.connect(Gtk.main_quit);
+		
 		cover=new Gtk.Image();
-		this.cover.set_from_file ("img/babe.png");	
-				
+		this.cover.set_from_file ("img/babe.png");				
 		       		
         babe_stream=new Stream(); //this is the main pipeline for streaming
-        artwork = new LastFm();
+        artwork = new LastFm(); //this is to get the album art
         
+        //Sets everything we need up
 		set_babe_sidebar();
 		set_babe_statusbar();
 		set_babe_playback_box();
 		set_babe_style();	
 		support_drag_and_drop();
+		
+		/***
+		**SETUP HEADER WIDGETS
+		***/
+		
 		//open music event
 		open_icon = new Gtk.Image.from_icon_name("folder-open-symbolic", Gtk.IconSize.MENU);
+		open_icon.get_style_context().add_class("options_icon");
 		open_event = new Gtk.EventBox();
 		open_event.add(open_icon);		
 		open_icon.set_tooltip_text ("Open...");
 		open_event.button_press_event.connect (() => {					
 					on_open();
 					return true;			
-		});
-		
-		
-		//header box
+		});	
+			
+		//option event- to-finish
 		options= new Gtk.Image.from_icon_name("go-jump-symbolic", Gtk.IconSize.MENU);		
 		options.get_style_context().add_class("options_icon");
-		open_icon.get_style_context().add_class("options_icon");
 		var options_event=new Gtk.EventBox();
 		options_event.set_tooltip_text("Options");
 		options_event.add(options);	
+		
 		bool op=false;
-options_event.button_press_event.connect (() => {
-	if(op==false)
-	{
+		options_event.button_press_event.connect (() => {
+			if(op==false)
+			{
 				cover.set_from_file("img/babe_back.png");
 				op=true;
 
-	}else
-	{
-		update_cover();
-		op=false;
-	}
-					return true;			
-		});
+			}else
+			{
+				update_cover();
+				op=false;
+			}
+			return true;			
+		});		
 		
-		
-		
-		
-			
 		//playback box
 		playback_box = new Gtk.Box(Gtk.Orientation.VERTICAL,10);
 		h_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL);
@@ -229,32 +231,32 @@ options_event.button_press_event.connect (() => {
 		//playback_box.add(h_separator);
 		playback_box.set_spacing(-1);
 
+		//pack playback_box inside an eventbox
 		playback_box_event=new Gtk.EventBox();
 		playback_box_event.add(playback_box);
 		playback_box_event.get_style_context().add_class("playback_box");
 		
+		//let's pack now the playback_box_event into a revelaer
 		playback_box_revealer=new Gtk.Revealer();
 		playback_box_revealer.set_transition_type(RevealerTransitionType.CROSSFADE);
 		//playback_box_revealer.set_transition_duration(300);
 		playback_box_revealer.add(playback_box_event);	
 		
-		
+		//let's fix their positions to overlap them
 		Gtk.Fixed fixed = new Gtk.Fixed ();
 		fixed.put(cover,0,0);
 		fixed.put(options_event,180,5);
 		fixed.put(open_event,5,5);
-		fixed.put(playback_box_revealer,45, 150);
+		fixed.put(playback_box_revealer,45, 150);	
 		
-		
-		
-		art_header = new Gtk.EventBox();//
-	
-		
+		//let's make sure here that the revealer works allright	
 		playback_box_event.add_events (Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK);
 		playback_box_event.enter_notify_event.connect (reveal_playback_box);
         //art_header.leave_notify_event.connect (hide);
         //art_header.set_vexpand(true);
         
+        //now we put the fixed box inside a new eventbox to make it the header/titlebar
+        art_header = new Gtk.EventBox();//	
         art_header.add(fixed);
         art_header.add_events (Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK);
 		art_header.enter_notify_event.connect (reveal_playback_box);
@@ -262,62 +264,66 @@ options_event.button_press_event.connect (() => {
         //art_header.set_visible_child_name("head_cover");        
         this.set_titlebar(art_header); //this sets the album art as headerbar		
 
-		//main view
+		/***
+		**SETUP ALL OTHER WIDGETS
+		***/
+		
+		//main view: sidebar->lists view
 		media_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL,0);
 		Gtk.Separator v_separator = new Gtk.Separator (Gtk.Orientation.VERTICAL);
 		media_box.add(babe_sidebar);
 		media_box.add(v_separator);
 		media_box.pack_end(media_stack,true,true,0);
-		//MAIN CONTAINER: playbackbox->main view->statusbar
+		
+		//main container: main view->statusbar
 		main_container = new Gtk.Box(Gtk.Orientation.VERTICAL,0);
 		main_container.add(h_separator);
 		main_container.add(media_box);
 		main_container.pack_end(statusbar,false,false,0);		
 
-GLib.Timeout.add_seconds(30, (SourceFunc) this.hide_playback_box);
+		//the constant calls to needed functions
+		GLib.Timeout.add_seconds(30, (SourceFunc) this.hide_playback_box);
 		GLib.Timeout.add_seconds(8, (SourceFunc) this.update_status);
-
 		GLib.Timeout.add (1000, (SourceFunc) this.update_media_controls);
-		//manage the container
+		
+		//add the main container to the babe window
 		this.add(main_container);
 	}
 	
 	
-private void support_drag_and_drop() {
-
-
+	private void support_drag_and_drop() //this doesn't work as expected
+	{
         Gtk.drag_dest_set (this, DestDefaults.ALL, target_list, Gdk.DragAction.COPY);
         Gtk.drag_dest_add_uri_targets (this);
-      this.drag_data_received.connect (on_drag_data_received);
+		this.drag_data_received.connect (on_drag_data_received);
 	}
 	
-	void on_drag_data_received (Gtk.Widget widget, Gdk.DragContext ctx,
-                            int x, int y,
-                            Gtk.SelectionData selection_data,
-                            uint target_type, uint time) {
+	public void on_drag_data_received (Gtk.Widget widget, Gdk.DragContext ctx,
+								int x, int y,
+								Gtk.SelectionData selection_data,
+								uint target_type, uint time) 
+	{
 
-
-
-		if ((selection_data == null) || !(selection_data.get_length () >= 0)) {
+		if ((selection_data == null) || !(selection_data.get_length () >= 0))
+		{
 			return;
 		}
-
-		switch (target_type) {
+		switch (target_type)
+		{
 		case Target.STRING:
 			string data = (string) selection_data.get_data ();
 			print("string: %s", (string)data);
 			break;
 		case Target.URILIST:
 			var uris = selection_data.get_uris ();
-			for (int i=0; i < uris.length; i++) {
+			for (int i=0; i < uris.length; i++) 
+			{
 			print("uris: %s", (string)uris);
 			}
 			break;
 		}
-
-            
-	
 	}
+	
 	public bool reveal_playback_box()
 	{
 		playback_box_revealer.set_reveal_child(true);
@@ -375,10 +381,7 @@ private void support_drag_and_drop() {
 		playback_buttons.pack_start(next_icon_event,true,true,1);
 		//playback_buttons.pack_end(stream_dur, false, false, 0);			
 		
-		//progressbar.set_tooltip_text(stream_pos.get_text()+" of "+stream_dur.get_text());
-		//setup event action
-			
-				
+		//progressbar.set_tooltip_text(stream_pos.get_text()+" of "+stream_dur.get_text());			
 	}
 	
 	public void set_babe_sidebar()
@@ -550,8 +553,7 @@ private void support_drag_and_drop() {
 		babe_sidebar.row_activated.connect ((row => {		
 			if(row==babe_list)
 			{
-				//babe_icon_event.set_sensitive(true);
-				
+				//babe_icon_event.set_sensitive(true);				
 				print ("babe_list\n");
 				media_stack.set_visible_child_name("add");
 				list_int=1;		
@@ -563,18 +565,13 @@ private void support_drag_and_drop() {
 				//media_stack.set_visible_child_name("list");
 				status_label.label="Info not avalible";
 				media_stack.set_visible_child_name("info");
-		
-
 				info_int=1;		
-
 			}
 			if(row==babe_playlist)
 			{
 				print ("babe_playlist\n");
 				media_stack.set_visible_child_name("playlist");
 				status_label.label="000 Playlists";
-		
-
 				playlist_int=1;		
 			}	
 			if(row==babe_babes)
@@ -596,7 +593,7 @@ private void support_drag_and_drop() {
 	public void set_babe_statusbar()
 	{			
 		statusbar = new Gtk.ActionBar();
-		
+				
 		//events on the statusbar
 		shuffle_event = new Gtk.EventBox();
 		add_playlist_event = new Gtk.EventBox();		
@@ -628,12 +625,9 @@ private void support_drag_and_drop() {
 			//stdout.printf ("%s\n", str);
 			add_playlist_entry.set_text("");
 			status_label.label="Playlist Created";
-	
-
-
 		});		
 		        
-        add_playlist_popover.add(add_playlist_entry);		
+        add_playlist_popover.add(add_playlist_entry);	
 		
 		//shuffle event //TO-DO
 		shuffle_icon= new Gtk.Image.from_icon_name("media-playlist-no-shuffle-symbolic", Gtk.IconSize.MENU);
@@ -670,12 +664,10 @@ private void support_drag_and_drop() {
 					return true;
 			
 		});
-		
-				
+						
 		//hide event
 		hide_icon= new Gtk.Image.from_icon_name("go-up-symbolic", Gtk.IconSize.MENU);
-		hide_event.add(hide_icon);
-		
+		hide_event.add(hide_icon);		
 		hide_icon.set_tooltip_text ("Go Mini");
 		mini=0;
 		
@@ -685,14 +677,12 @@ private void support_drag_and_drop() {
 						case 0: 
 							if(babe_stream.is_playing())
 							{
-							this.set_keep_above(true); 
+								this.set_keep_above(true); 
 							}else
 							{
-															this.set_keep_above(false);
-
+								this.set_keep_above(false);
 							}
-									playback_box_revealer.set_reveal_child(false);
-
+							playback_box_revealer.set_reveal_child(false);
 							media_box.hide();
 							h_separator.hide();
 							hide_icon.set_tooltip_text ("Go Maxi");
@@ -724,11 +714,11 @@ private void support_drag_and_drop() {
 	public void on_open()
 	{	 
 	 	chooser = new Gtk.FileChooserDialog (
-			"Select your favorite file", this, Gtk.FileChooserAction.OPEN,
-			"_Cancel",
-			Gtk.ResponseType.CANCEL,
-			"_Open",
-			Gtk.ResponseType.ACCEPT);
+				"Select your favorite file", this, Gtk.FileChooserAction.OPEN,
+				"_Cancel",
+				Gtk.ResponseType.CANCEL,
+				"_Open",
+				Gtk.ResponseType.ACCEPT);
 					 
 		chooser.select_multiple = true;
 		Gtk.FileFilter filter = new Gtk.FileFilter ();
@@ -740,14 +730,12 @@ private void support_drag_and_drop() {
 		if (chooser.run () == Gtk.ResponseType.ACCEPT) 
 		{
 			SList<string> uris = chooser.get_uris ();
-			//stdout.printf ("Selection on_open:\n");
-			
+			//stdout.printf ("Selection on_open:\n");			
 			foreach (unowned string uri in uris) 
 			{
 				main_list.append (out iter);
 				main_list.set (iter, 0, get_song_info(uri).tag.title+"\nby "+ get_song_info(uri).tag.artist, 1, get_song_info(uri).tag.artist, 2, uri, 3,get_song_info(uri).tag.album,4,get_song_info(uri).tag.title);
-			}
-       
+			}       
 			media_stack.set_visible_child_name("list");
 			babe_sidebar.row_activated.connect ((row => {		
 			if(row==babe_list)
@@ -755,16 +743,14 @@ private void support_drag_and_drop() {
 				print ("babe_list\n");
 				media_stack.set_visible_child_name("list");
 			}
-		}));
+			}));
 		}     				
  				
 		chooser.close ();
 		
-		
-		 
 	}
 		
-	public TagLib.File get_song_info(string uri)
+	public TagLib.File get_song_info(string uri)//it actually turn a uri into a path to be able to get the tags
 	{
 		var gfile = GLib.File.new_for_uri (uri);
 		string nm=gfile.get_path() ;
@@ -778,20 +764,18 @@ private void support_drag_and_drop() {
 			cover.set_from_file(cover_file);
 		}else
 		{		
-			var pixbuf=artwork.download_cover_art(cover_file);
+			cover_pixbuf=artwork.download_cover_art(cover_file);
 			
-			if (pixbuf==null)
+			if (cover_pixbuf==null)
 			{
-							cover.set_from_file("img/babe.png");
-
+				cover.set_from_file("img/babe.png");
 			}else
 			{
-				var scaled_buf = pixbuf.scale_simple(200,200, Gdk.InterpType.BILINEAR);
-			cover.set_from_pixbuf(scaled_buf);	
-			}			 
-			
+				var scaled_buf = cover_pixbuf.scale_simple(200,200, Gdk.InterpType.BILINEAR);
+				cover.set_from_pixbuf(scaled_buf);	
+			}			
 		}	
-			//g.set_color(cover_file, playback_box);
+			//g.set_color(cover_file, playback_box);//to assign the most prominent color of coverart to certain widget
 	}
 	
 	public string get_babe_cover()
@@ -827,12 +811,11 @@ private void support_drag_and_drop() {
 				{
 					return album_art;
 				}
-			}
-			
+			}			
 		}	
 	}
 	
-	public string get_babe_head()
+	public string get_babe_head()//to do
 	{
 		string artist_head;
 		
@@ -861,8 +844,6 @@ private void support_drag_and_drop() {
 		selection.changed.connect (on_changed);		
 	}	
 	
-	
-	
 	void on_changed (Gtk.TreeSelection selection) 
 	{
 		
@@ -885,8 +866,9 @@ private void support_drag_and_drop() {
 			get_previous_song(model);
 			return true;			
 		});	
-				
-		 babe_stream.playbin.bus.add_watch (0, (bus, msg) => {			
+		
+		//check end of stream to start next song		
+		babe_stream.playbin.bus.add_watch (0, (bus, msg) => {			
 			if (msg.type == Gst.MessageType.EOS) 
 			{
 				get_next_song(model);				
@@ -894,8 +876,7 @@ private void support_drag_and_drop() {
 				return true;
 		});		
 				
-		start_playback_actions();
-		
+		start_playback_actions();		
 	}	
 	
 	public void start_playback_actions()
@@ -908,10 +889,31 @@ private void support_drag_and_drop() {
 		playback_box_revealer.set_reveal_child(true);
 		progressbar.set_sensitive(true);
 		
+		if(!(this.is_active ))
+		{
+			notify(title,artist+" \xe2\x99\xa1 "+album);
+		}
+		
 		if(!(check_babe(song)))
 		{
-						babe_icon.set_state_flags(StateFlags.CHECKED, true);	
+			babe_icon.set_state_flags(StateFlags.CHECKED, true);	
 		}
+	}
+	
+	public void notify(string s, string b)
+	{
+		
+		string icon = "dialog-information";
+		
+		try 
+		{
+			Notify.Notification notification = new Notify.Notification (s, b, icon);
+			notification.set_image_from_pixbuf(cover_pixbuf);
+			notification.show ();
+		} catch (GLib.Error e) 
+		{
+			error ("Error: %s", e.message);
+		}		
 	}
 	
 	public void enable_playbox_events()
@@ -963,7 +965,7 @@ private void support_drag_and_drop() {
 						3, out album);
 	
 		start_playback_actions();
-		
+		notify(title,artist+" \xe2\x99\xa1 "+album);		
 		print("Playing next song->\n");
 	}
 	
@@ -984,11 +986,10 @@ private void support_drag_and_drop() {
 						1, out artist,
 						2, out song,
 						3, out album);
+						
 		start_playback_actions();
-
-		update_cover();			
+		notify(title,artist+" \xe2\x99\xa1 "+album);			
 		print("<-Playing previous song\n");
-
 	}
 	
 	public void get_random_song(Gtk.TreeModel liststore)
@@ -1011,11 +1012,9 @@ private void support_drag_and_drop() {
 						1, out artist,
 						2, out song,
 						3, out album);
+						
 		start_playback_actions();
-
-
-		update_cover();			
-		print("previous song<-");
+		print("Playing random song<->\n");
 
 	}		
 	
@@ -1023,28 +1022,28 @@ private void support_drag_and_drop() {
 	{
 		string check_song=song;
 		
-		if(check_babe(check_song))
+		if(check_babe(check_song))//checks if the song already exists in the list
 		{
 			FileStream file = FileStream.open (".Babes.txt","a");
-		assert (file != null);
-	    file.puts (song+"\n");
+			assert (file != null);
+			file.puts (song+"\n");
 	    
-	    babes_list.append (out iter2);
-		babes_list.set (iter2, 0, get_song_info(song).tag.title+"\nby "+ get_song_info(song).tag.artist, 1, get_song_info(song).tag.artist, 2, song,3,get_song_info(song).tag.album,4,get_song_info(song).tag.title);
+			babes_list.append (out iter2);
+			babes_list.set (iter2, 0, get_song_info(song).tag.title+"\nby "+ get_song_info(song).tag.artist, 1, get_song_info(song).tag.artist, 2, song,3,get_song_info(song).tag.album,4,get_song_info(song).tag.title);
 	    
-		status_label.label="Babe added!";
-					babe_icon.set_state_flags(StateFlags.CHECKED, true);	
+			status_label.label="Babe added!";
+			
+			notify("Babe added!",title+" \xe2\x99\xa1 "+artist);
+			babe_icon.set_state_flags(StateFlags.CHECKED, true);	
 
 		}else
 		{
-							print("Already added");
-
+			print("Already added\n");
 		}
    	}
         	
     public bool check_babe(string c_song)
     {
-		
 		var file = GLib.File.new_for_path (".Babes.txt");
 		bool checking=true;
 		var dis = new DataInputStream (file.read());
@@ -1080,8 +1079,7 @@ private void support_drag_and_drop() {
 	{				
 		set_babe_cover(get_babe_cover());		
 	}
-	
-	
+		
 	public void get_babe_list()
 	{		
 		//babes_list.clear();

@@ -23,7 +23,7 @@ int main(string[] args) {
 	
 	Gtk.init(ref args); 
 	Gst.init(ref args); 
-
+	Notify.init ("Babe");
 	//set the babe styleshit 
 	var css_provider = new Gtk.CssProvider();
 	try
