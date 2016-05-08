@@ -30,6 +30,12 @@ public class LastFm {
         var message = new Soup.Message ("GET", url);
         
         session.send_message (message);
+        if (message==null)
+        {
+			print("hubo un error en soup");
+			return null;
+		}else
+		{
         
         Gdk.PixbufLoader loader = new Gdk.PixbufLoader ();
         loader.write (message.response_body.data); 
@@ -39,8 +45,9 @@ public class LastFm {
         
         //image.save (dest + name, "png");        
         loader.close ();
-        
         return image;
+		}
+        
     }    
     
     public string generate_image_key (string text) {

@@ -48,7 +48,7 @@ namespace BabeStream
 		
 		public void uri(string uri)
 		{
-			stdout.printf("---->uri---->:\n WE GOT TO THE URI");
+			stdout.printf("uri---->: "+uri+"\n");
 			song_uri=uri;
 			start_stream(playbin);;
 		}
@@ -63,6 +63,11 @@ namespace BabeStream
 		public void play_song()
 		{
 			playbin.set_state (State.PLAYING);
+		}
+		
+		public void stop_stream()
+		{
+			playbin.set_state (State.NULL);
 		}
 		
 		public void pause_song()
