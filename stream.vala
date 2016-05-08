@@ -96,5 +96,29 @@ namespace BabeStream
 		{
         playbin.seek_simple (Gst.Format.TIME, Gst.SeekFlags.FLUSH, seek_pos);
 		}	
+		
+		public bool is_playing () {
+        if (this.get_state() == Gst.State.PLAYING) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+      public Gst.State get_state () {
+    
+        Gst.State state;
+        Gst.State pending;
+    
+        playbin.get_state (out state, out pending, 5 * Gst.SECOND);
+        
+        return state;
+    }
+    
+    
+    public void set_state (Gst.State state) {
+        playbin.set_state (state);
+    }
+    
 	}	
 }
