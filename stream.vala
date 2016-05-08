@@ -99,7 +99,8 @@ namespace BabeStream
 		
 		public bool is_playing () 
 		{
-			if (this.get_state() == Gst.State.PLAYING) {
+			if (this.get_state() == Gst.State.PLAYING) 
+			{
 				return true;
 			}        
         return false;

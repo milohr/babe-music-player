@@ -840,9 +840,61 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		view.set_grid_lines (TreeViewGridLines.HORIZONTAL);
 		view.set_reorderable(true);
 		view.set_headers_visible(false);
-        var selection = view.get_selection ();
-		selection.changed.connect (on_changed);		
+		
+		view.row_activated.connect(this.on_row_activated);
+		
+        //var selection = view.get_selection ();
+		//selection.changed.connect (on_changed);
 	}	
+	
+	private void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.TreeViewColumn column) {
+        
+        if (treeview.model.get_iter (out iter, path)) {
+            var selection = treeview.get_selection ();
+            
+            if (selection.get_selected(out model, out iter)) 
+			{
+				model.get (iter,
+                            4, out title,
+							1, out artist,
+							2, out song,
+							3, out album);
+			}
+			
+			
+			
+		start_playback_actions();		
+        }
+              
+		//skipping songs	
+        next_icon_event.button_press_event.connect (() => {	
+		
+			get_next_song(model);	
+			return true;			
+		});						
+				
+		previous_icon_event.button_press_event.connect (() => {	
+			get_previous_song(model);
+			notify(title,artist+" \xe2\x99\xa1 "+album);			
+			return true;			
+		});	
+		
+		//check end of stream to start next song		
+		babe_stream.playbin.bus.add_watch (0, (bus, msg) => {			
+			if (msg.type == Gst.MessageType.EOS) 
+			{
+				get_next_song(model);				
+			}
+				return true;
+		});		
+				
+    }	
+	
+	
+	public void test()
+	{
+		print("the test on:");
+	}
 	
 	void on_changed (Gtk.TreeSelection selection) 
 	{
@@ -856,27 +908,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 							3, out album);
 		}
 		
-		//skipping songs
-		next_icon_event.button_press_event.connect (() => {	
-			get_next_song(model);
-			return true;			
-		});	
 		
-		previous_icon_event.button_press_event.connect (() => {	
-			get_previous_song(model);
-			return true;			
-		});	
-		
-		//check end of stream to start next song		
-		babe_stream.playbin.bus.add_watch (0, (bus, msg) => {			
-			if (msg.type == Gst.MessageType.EOS) 
-			{
-				get_next_song(model);				
-			}
-				return true;
-		});		
-				
-		start_playback_actions();		
+		//start_playback_actions();		
 	}	
 	
 	public void start_playback_actions()
@@ -947,48 +980,34 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		});					
 	}
 	
-	public void get_next_song(Gtk.TreeModel liststore)
+	public void get_next_song(Gtk.TreeModel model)
 	{
-		bool next;
-		babe_icon.set_state_flags(StateFlags.NORMAL, true);
-
-		next= liststore.iter_next (ref iter);
-		if(next==false)
-		{
-			next= liststore.get_iter_first(out iter);
-		}	
-			
-		model.get(iter,
-                        4, out title,
-						1, out artist,
-						2, out song,
-						3, out album);
-	
-		start_playback_actions();
-		notify(title,artist+" \xe2\x99\xa1 "+album);		
+		
+		if(model.iter_next (ref iter))
+			{
+				model.get (iter,
+                            4, out title,
+							1, out artist,
+							2, out song,
+							3, out album);
+			}
+		print("Upcoming song: "+title+"\n");
+		start_playback_actions();	
 		print("Playing next song->\n");
 	}
 	
 	public void get_previous_song(Gtk.TreeModel liststore)
 	{
-		bool previous;
-		babe_icon.set_state_flags(StateFlags.NORMAL, true);
-
-		previous = liststore.iter_previous (ref iter);
-					
-		if(previous==false)
-		{
-			previous= liststore.get_iter_first(out iter);
-		}	
-						
-		model.get (iter,
-                        4, out title,
-						1, out artist,
-						2, out song,
-						3, out album);
-						
-		start_playback_actions();
-		notify(title,artist+" \xe2\x99\xa1 "+album);			
+		if(model.iter_previous (ref iter))
+			{
+				model.get (iter,
+                            4, out title,
+							1, out artist,
+							2, out song,
+							3, out album);
+			}
+		print("Previous song: "+title+"\n");
+		start_playback_actions();	
 		print("<-Playing previous song\n");
 	}
 	
