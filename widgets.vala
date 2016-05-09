@@ -285,7 +285,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		GLib.Timeout.add_seconds(30, (SourceFunc) this.hide_playback_box);
 		GLib.Timeout.add_seconds(8, (SourceFunc) this.update_status);
 		GLib.Timeout.add (1000, (SourceFunc) this.update_media_controls);
-		
+
 		//add the main container to the babe window
 		this.add(main_container);
 	}
@@ -438,10 +438,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		
 		button1.clicked.connect(clean_babe_list); //empty the babe'd list
 		button2.clicked.connect(() => {					
-		//babe_stream.set_state(Gst.State.NULL);
+		babe_stream.set_state(Gst.State.NULL);
 
-			//main_list.clear();
-				//	media_stack.set_visible_child_name("add");
+			main_list.clear();
+			media_stack.set_visible_child_name("add");
 
 		});//empty the babe'd list
 		
@@ -835,87 +835,94 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		}		
 	}
 	
-	public void list_selected(Gtk.TreeView view)
+	public void list_selected(Gtk.TreeView view)//actions done to the current list selected
 	{
+		//properties
 		view.set_grid_lines (TreeViewGridLines.HORIZONTAL);
 		view.set_reorderable(true);
 		view.set_headers_visible(false);
+		view.set_enable_search(true);
+		view.set_fixed_height_mode (true);
 		
+		//right click event
+		view.add_events (Gdk.EventType.BUTTON_PRESS);
+		view.button_press_event.connect (on_right_click);
+  
+		//double click event
 		view.row_activated.connect(this.on_row_activated);
 		
-       // var selection = view.get_selection ();
-		//selection.changed.connect (on_changed);
+		//var selection = view.get_selection ();
+		//selection.changed.connect (get_selection);
 	}	
 	
-	private void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.TreeViewColumn column) {
-        
+	private void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
+	{
+		model=treeview.get_model();
         if (treeview.model.get_iter (out iter, path)) {
-            var selection = treeview.get_selection ();
-            
-            if (selection.get_selected(out model, out iter)) 
-			{
-				model.get (iter,
-                            4, out title,
-							1, out artist,
-							2, out song,
-							3, out album);
-			}
-			
-			
+		model.get (iter,
+                        4, out title,
+						1, out artist,
+						2, out song,
+						3, out album);
 			
 		start_playback_actions();		
         }
               
 		//skipping songs	
-        next_icon_event.button_press_event.connect (() => {	
-				
-			get_next_song(model);	
+        next_icon_event.button_press_event.connect (() => {					
+			get_next_song();	
 			notify(title,artist+" \xe2\x99\xa1 "+album);
 			return true;			
 		});						
 				
 		previous_icon_event.button_press_event.connect (() => {	
-			get_previous_song(model);
+			get_previous_song();
 			notify(title,artist+" \xe2\x99\xa1 "+album);			
 			return true;			
 		});	
 		
-		//check end of stream to start next song		
+		//check end of stream to start the next song		
 		babe_stream.playbin.bus.add_watch (0, (bus, msg) => {			
 			if (msg.type == Gst.MessageType.EOS) 
 			{
-				get_next_song(model);				
+				get_next_song();				
 			}
 				return true;
 		});		
 				
-    }	
+    }		
 	
-	
-	public bool test()
+	public bool test(string testing)
 	{
-		
-		print("the test on:");
+		print("the test on: "+testing);
 		return true;
 	}
 	
-	void on_changed (Gtk.TreeSelection selection) 
+	public bool on_right_click (Gdk.EventButton event) //catches the right lcick event
 	{
 		
+		if (event.type == Gdk.EventType.BUTTON_PRESS  &&  event.button == 3)
+		{
+			print ("Single right click on the tree view \n");    
+			return true;
+		}else
+		{
+			return false;
+		}		
+			
+	}	
+		
+	public void get_selection(Gtk.TreeSelection selection)
+	{
 		if (selection.get_selected(out model, out iter)) 
 		{
 			model.get (iter,
-                            4, out title,
-							1, out artist,
-							2, out song,
-							3, out album);
-			this.test();
+                                0, out title,
+								1, out artist,
+								2, out song);
+								
 		}
-		
-		
-		
-		//start_playback_actions();		
-	}	
+	}
 	
 	public void start_playback_actions()
 	{
@@ -940,9 +947,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	
 	public void notify(string s, string b)
 	{
-		
 		string icon = "dialog-information";
-		
 		try 
 		{
 			Notify.Notification notification = new Notify.Notification (s, b, icon);
@@ -985,23 +990,24 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		});					
 	}
 	
-	public void get_next_song(Gtk.TreeModel liststore)
-	{
-		
-		if(model.iter_next (ref iter))
-			{
-				model.get (iter,
+	public void get_next_song()
+	{		
+		if(!(model.iter_next (ref iter)))
+		{
+			model.get_iter_first(out iter);
+		}
+			model.get (iter,
                             4, out title,
 							1, out artist,
 							2, out song,
 							3, out album);
-			}
+							
 		print("Upcoming song: "+title+"\n");
 		start_playback_actions();	
 		print("Playing next song->\n");
 	}
 	
-	public void get_previous_song(Gtk.TreeModel liststore)
+	public void get_previous_song()
 	{
 		if(model.iter_previous (ref iter))
 			{
