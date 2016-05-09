@@ -898,12 +898,29 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		return true;
 	}
 	
-	public bool on_right_click (Gdk.EventButton event) //catches the right lcick event
+	public bool on_right_click (Gtk.Widget widget, Gdk.EventButton event) //catches the right lcick event
 	{
+		var treeview = (Gtk.TreeView) widget;
+		Gtk.TreePath path=new Gtk.TreePath();
 		
 		if (event.type == Gdk.EventType.BUTTON_PRESS  &&  event.button == 3)
 		{
-			print ("Single right click on the tree view \n");    
+			var selection = treeview.get_selection();
+			if(treeview.get_path_at_pos((int)event.x,(int)event.y,out path,null, null, null))
+			{
+						model=treeview.get_model();
+
+				 if (treeview.model.get_iter (out iter, path)) {
+						model.get (iter,
+                        4, out title,
+						1, out artist,
+						2, out song,
+						3, out album);
+									
+				}
+				print ("Single right click on the tree view"+title+" \n");    
+				
+			}
 			return true;
 		}else
 		{
@@ -912,17 +929,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			
 	}	
 		
-	public void get_selection(Gtk.TreeSelection selection)
-	{
-		if (selection.get_selected(out model, out iter)) 
-		{
-			model.get (iter,
-                                0, out title,
-								1, out artist,
-								2, out song);
-								
-		}
-	}
+	
 	
 	public void start_playback_actions()
 	{
