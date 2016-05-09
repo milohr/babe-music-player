@@ -843,7 +843,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		
 		view.row_activated.connect(this.on_row_activated);
 		
-        //var selection = view.get_selection ();
+       // var selection = view.get_selection ();
 		//selection.changed.connect (on_changed);
 	}	
 	
@@ -868,8 +868,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
               
 		//skipping songs	
         next_icon_event.button_press_event.connect (() => {	
-		
+				
 			get_next_song(model);	
+			notify(title,artist+" \xe2\x99\xa1 "+album);
 			return true;			
 		});						
 				
@@ -891,9 +892,11 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
     }	
 	
 	
-	public void test()
+	public bool test()
 	{
+		
 		print("the test on:");
+		return true;
 	}
 	
 	void on_changed (Gtk.TreeSelection selection) 
@@ -906,7 +909,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 							1, out artist,
 							2, out song,
 							3, out album);
+			this.test();
 		}
+		
 		
 		
 		//start_playback_actions();		
@@ -980,7 +985,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		});					
 	}
 	
-	public void get_next_song(Gtk.TreeModel model)
+	public void get_next_song(Gtk.TreeModel liststore)
 	{
 		
 		if(model.iter_next (ref iter))
