@@ -77,7 +77,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	//view modes	
 	public Gtk.Stack media_stack;
 	public Gtk.Stack babe_info_stack;//to-do
-		
+	public Gtk.Menu menu;	
 	public Gtk.EventBox add_music_event;		
 	public Gtk.Image add_music_img;
 	
@@ -426,25 +426,22 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		settings_event.add(icon);
 		babe_sidebar.insert(settings_event,5);
 		
-		var button1=new Gtk.Button.with_label("Clean Babes");
-		var button2=new Gtk.Button.with_label("Clean List");
+		var op1=new Gtk.MenuItem.with_label("Clean Babes");
+		var op2=new Gtk.MenuItem.with_label("Clean List");
 		
-		settings_box=new Gtk.Box(Gtk.Orientation.VERTICAL,0);
-		settings_box.add(button1);
-		settings_box.add(button2);
 		
-		settings_popover=new Gtk.Popover(settings_event);
-		settings_popover.add(settings_box);
-		
-		button1.clicked.connect(clean_babe_list); //empty the babe'd list
-		button2.clicked.connect(() => {					
-		babe_stream.set_state(Gst.State.NULL);
-
+		op1.activate.connect(clean_babe_list); //empty the babe'd list
+		op2.activate.connect(() => {					
+			//babe_stream.set_state(Gst.State.NULL);
 			main_list.clear();
 			media_stack.set_visible_child_name("add");
 
 		});//empty the babe'd list
-		
+		var caja = new Gtk.Box(Gtk.Orientation.VERTICAL,0);
+				caja.add(op1);
+				caja.add(op2);
+		settings_popover=new Gtk.Popover(settings_event);
+		settings_popover.add(caja);
 		settings_event.button_press_event.connect (() => {					
 			settings_popover.show_all();
 			return true;
@@ -455,7 +452,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	
 	public void clean_babe_list()
 	{
-		babe_stream.set_state(Gst.State.NULL);
+		//babe_stream.set_state(Gst.State.NULL);
 		FileStream.open (".Babes.txt","w");
 		babes_list.clear();
 		c=0;
@@ -899,8 +896,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	}
 	
 	public bool on_right_click (Gtk.Widget widget, Gdk.EventButton event) //catches the right lcick event
-	{
-		var treeview = (Gtk.TreeView) widget;
+	{		var treeview = (Gtk.TreeView) widget;
+
+		
+		
 		Gtk.TreeIter iter;
 		Gtk.TreePath path=new Gtk.TreePath();
 		string song_uri, title_r, artist_r,album_r; //to avoid problems with global string of title, artist and album and song 
@@ -917,6 +916,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 						1, out artist_r,
 						2, out song_uri,
 						3, out album_r);
+						
+						set_list_action(song_uri);
+						menu.popup(null,null,null,event.button, event.time);
 				print ("Single right click on the tree view: "+title_r+" +++ "+artist_r+" \n");					
 				}
 				    
@@ -930,7 +932,38 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			
 	}	
 		
+	public void set_list_action(string line)
+	{
+	menu = new Gtk.Menu();
+
+	var item1= new Gtk.MenuItem.with_label("Babe it \xe2\x99\xa1");
+	var item2= new Gtk.MenuItem.with_label("Remove it");
+	var item3= new Gtk.MenuItem.with_label("Queue it");
+	var item4= new Gtk.MenuItem.with_label("Add to playlist");
 	
+	item1.activate.connect(()=>{
+		print("accion#1");
+		song=line;
+		add_babe(iter);
+	});
+	item2.activate.connect(()=>{
+		print("accion#2");
+	});
+	
+	item3.activate.connect(()=>{
+		print("accion#3");
+	});
+	item4.activate.connect(()=>{
+		print("accion#4");
+	});
+	
+	
+	menu.append(item1);
+	menu.append(item2);
+	menu.append(item3);
+	menu.append(item4);
+	menu.show_all();
+	}
 	
 	public void start_playback_actions()
 	{
@@ -1010,9 +1043,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 							2, out song,
 							3, out album);
 							
+		print("Playing next song->\n");
 		print("Upcoming song: "+title+"\n");
 		start_playback_actions();	
-		print("Playing next song->\n");
+		
 	}
 	
 	public void get_previous_song()
@@ -1025,9 +1059,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 							2, out song,
 							3, out album);
 			}
+		print("<-Playing previous song\n");
 		print("Previous song: "+title+"\n");
 		start_playback_actions();	
-		print("<-Playing previous song\n");
+		
 	}
 	
 	public void get_random_song(Gtk.TreeModel liststore)
@@ -1071,11 +1106,12 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	    
 			status_label.label="Babe added!";
 			
-			notify("Babe added!",title+" \xe2\x99\xa1 "+artist);
+			notify("Babe added!",get_song_info(check_song).tag.title+" \xe2\x99\xa1 "+get_song_info(check_song).tag.artist);
 			babe_icon.set_state_flags(StateFlags.CHECKED, true);	
 
 		}else
 		{
+			notify("Babe already added",":(");
 			print("Already added\n");
 		}
    	}
