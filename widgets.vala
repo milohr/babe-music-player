@@ -842,7 +842,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		view.set_reorderable(true);
 		view.set_headers_visible(false);
 		view.set_enable_search(true);
-		view.set_fixed_height_mode (true);
+		//view.set_fixed_height_mode (true);//needs some work
 		
 		//right click event
 		view.add_events (Gdk.EventType.BUTTON_PRESS);
@@ -901,8 +901,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public bool on_right_click (Gtk.Widget widget, Gdk.EventButton event) //catches the right lcick event
 	{
 		var treeview = (Gtk.TreeView) widget;
+		Gtk.TreeIter iter;
 		Gtk.TreePath path=new Gtk.TreePath();
-		
+		string song_uri, title_r, artist_r,album_r; //to avoid problems with global string of title, artist and album and song 
 		if (event.type == Gdk.EventType.BUTTON_PRESS  &&  event.button == 3)
 		{
 			var selection = treeview.get_selection();
@@ -912,13 +913,13 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 
 				 if (treeview.model.get_iter (out iter, path)) {
 						model.get (iter,
-                        4, out title,
-						1, out artist,
-						2, out song,
-						3, out album);
-									
+                        4, out title_r,
+						1, out artist_r,
+						2, out song_uri,
+						3, out album_r);
+				print ("Single right click on the tree view: "+title_r+" +++ "+artist_r+" \n");					
 				}
-				print ("Single right click on the tree view"+title+" \n");    
+				    
 				
 			}
 			return true;
