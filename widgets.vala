@@ -103,6 +103,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	//PLAY LISTS IN MEDIA_BOX
 	private Gtk.TreeIter iter;
 	private Gtk.TreeModel model;
+	private Gtk.TreeModel previous_model;
 
 	//main list
 	private Gtk.ListStore main_list;
@@ -855,6 +856,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
   
 		//double click event
 		
+		
+		
 		view.row_activated.connect(this.on_row_activated);
 		
 		//var selection = view.get_selection ();
@@ -863,7 +866,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	
 	private void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
 	{
+		previous_model=model;
 		model=treeview.get_model();
+		
+
         if (treeview.model.get_iter (out iter, path)) {
 		model.get (iter,
                         4, out title,
@@ -1057,7 +1063,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			}
 			else
 			{
-				model=babes_list;
+				model=previous_model;
 				iter=iter_aux;
 			}
 			
