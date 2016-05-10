@@ -40,7 +40,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 {  	
 	public Stream babe_stream;
 	public LastFm artwork;
-	
+	public int queue_c=0;
 	public int c=0;	//number of songs on the babed list
 	public int mini=0; //state of the mini/maxi view
 	public int shuffle=0; //whether the playback is on shuffle(0) or not(1)
@@ -474,7 +474,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		main_list = new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
 		babes_list= new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
 		playlist_list= new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
-		queue_list= new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
+		queue_list= new Gtk.ListStore (6, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof(int));
 		
 		main_list_view= new Gtk.TreeView.with_model (main_list);
 		babes_list_view= new Gtk.TreeView.with_model (babes_list);
@@ -491,8 +491,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		playlist_list_view.insert_column_with_attributes (-1, "Artist", playlist_list_cell, "text", 1);
 		
 		queue_list_view.insert_column_with_attributes (-1, "Title", queue_list_cell, "text", 0);
-		queue_list_view.insert_column_with_attributes (-1, "Artist", queue_list_cell, "text", 1);
-		queue_list_view.insert_column_with_attributes (0, "#", queue_list_cell, "text", 2);
+		//queue_list_view.insert_column_with_attributes (-1, "Artist", queue_list_cell, "text", 1);
+		queue_list_view.insert_column_with_attributes (0, "#", queue_list_cell, "text", 5);
 		
 		main_list_scroll.set_min_content_height(200);
 		main_list_scroll.set_policy (PolicyType.AUTOMATIC, PolicyType.AUTOMATIC);
@@ -545,7 +545,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		media_stack.set_visible_child_name("add");
 		//get the babe list
 		get_babe_list();
-		list_selected(main_list_view);	
+		list_selected(main_list_view);
+		list_selected(queue_list_view);
+			
 		//catch sidebar selection
 		babe_sidebar.row_activated.connect ((row => {		
 			if(row==babe_list)
@@ -835,7 +837,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public void list_selected(Gtk.TreeView view)//actions done to the current list selected
 	{
 		//properties
-		view.set_grid_lines (TreeViewGridLines.HORIZONTAL);
+		view.set_grid_lines (TreeViewGridLines.BOTH);
 		view.set_reorderable(true);
 		view.set_headers_visible(false);
 		view.set_enable_search(true);
@@ -952,6 +954,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	
 	item3.activate.connect(()=>{
 		print("accion#3");
+		song=line;
+		add_queue(iter);
 	});
 	item4.activate.connect(()=>{
 		print("accion#4");
@@ -1114,6 +1118,16 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			notify("Babe already added",":(");
 			print("Already added\n");
 		}
+   	}
+   	
+   	public void add_queue(Gtk.TreeIter iter2)	
+	{
+		string queue_song=song;		
+	    queue_c++;
+		queue_list.append (out iter2);
+		queue_list.set (iter2, 0, get_song_info(queue_song).tag.title+"\nby "+ get_song_info(queue_song).tag.artist, 1, get_song_info(queue_song).tag.artist, 2, queue_song,3,get_song_info(queue_song).tag.album,4,get_song_info(queue_song).tag.title, 5, queue_c);
+	    
+		notify("Queue!",get_song_info(queue_song).tag.title+" \xe2\x99\xa1 "+get_song_info(queue_song).tag.artist);
    	}
         	
     public bool check_babe(string c_song)
