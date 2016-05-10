@@ -47,6 +47,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public string check=""; //placeholder to check if we already have an album cover art
 	public string album_art; //placeholder to check if we already have an album cover art
 	public Gdk.Pixbuf cover_pixbuf; //the pixbuf of the coverart of the current song to use when wanted or needed 
+	public Gtk.TreeIter iter_aux;
 
 	//control view mode. pretty useless right now
 	public int list_int=0;
@@ -165,7 +166,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public BabeWindow()
 	{
 		//ventana.title = "Babe...";
-		
+		iter_aux = Gtk.TreeIter();
 		this.window_position = WindowPosition.CENTER;
 		this.set_resizable(false);
 		//this.set_decorated(false);
@@ -311,7 +312,12 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		switch (target_type)
 		{
 		case Target.STRING:
+		
 			string data = (string) selection_data.get_data ();
+			if(data.has_prefix(".mp3"))
+			{
+				print("es un mp3");				
+			}
 			print("string: %s", (string)data);
 			break;
 		case Target.URILIST:
@@ -848,6 +854,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		view.button_press_event.connect (on_right_click);
   
 		//double click event
+		
 		view.row_activated.connect(this.on_row_activated);
 		
 		//var selection = view.get_selection ();
@@ -866,7 +873,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			
 		start_playback_actions();		
         }
-              
+          
+          
 		//skipping songs	
         next_icon_event.button_press_event.connect (() => {					
 			get_next_song();	
@@ -884,7 +892,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		babe_stream.playbin.bus.add_watch (0, (bus, msg) => {			
 			if (msg.type == Gst.MessageType.EOS) 
 			{
-				get_next_song();				
+				get_next_song();
+								
 			}
 				return true;
 		});		
@@ -1036,7 +1045,25 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	}
 	
 	public void get_next_song()
-	{		
+	{	
+		var model2=model;
+		
+			
+		if(model==queue_list)	
+		{
+			if(queue_list.remove(iter))
+			{
+				queue_c--;
+			}
+			else
+			{
+				model=babes_list;
+				iter=iter_aux;
+			}
+			
+		}
+		
+		
 		if(!(model.iter_next (ref iter)))
 		{
 			model.get_iter_first(out iter);
@@ -1046,6 +1073,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 							1, out artist,
 							2, out song,
 							3, out album);
+							
+							
 							
 		print("Playing next song->\n");
 		print("Upcoming song: "+title+"\n");
