@@ -20,7 +20,7 @@ using Xml;
 using Soup;
 using BabeStream;
 using CoverArt;
-
+using BabeLyric;
 namespace BabeWidgets {
 		
 	enum Target {
@@ -40,6 +40,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 {  	
 	public Stream babe_stream;
 	public LastFm artwork;
+	public LyricsManiaFetcher babe_lyric;
 	public int queue_c=0;
 	public int c=0;	//number of songs on the babed list
 	public int mini=0; //state of the mini/maxi view
@@ -78,6 +79,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	//view modes	
 	public Gtk.Stack media_stack;
 	public Gtk.Stack babe_info_stack;//to-do
+	public Gtk.Label info_box_label;
+	public Gtk.Box info_box;
 	public Gtk.Menu menu;	
 	public Gtk.EventBox add_music_event;		
 	public Gtk.Image add_music_img;
@@ -166,7 +169,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	
 	public BabeWindow()
 	{
-		//ventana.title = "Babe...";
+		this.title = "Babe...";
 		iter_aux = Gtk.TreeIter();
 		this.window_position = WindowPosition.CENTER;
 		this.set_resizable(false);
@@ -180,7 +183,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		       		
         babe_stream=new Stream(); //this is the main pipeline for streaming
         artwork = new LastFm(); //this is to get the album art
-        
+        babe_lyric= new LyricsManiaFetcher();
         //Sets everything we need up
 		set_babe_sidebar();
 		set_babe_statusbar();
@@ -425,9 +428,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		babe_sidebar.insert(babe_playlist, 2);
 		babe_sidebar.insert(babe_babes, 3);
 		babe_sidebar.insert(babe_queue, 4);
-		
+		info_box_label=new Gtk.Label("No song");
 		info_view=new Gtk.Box(Gtk.Orientation.VERTICAL, 0);	
-		
+		info_view.add(info_box_label);
 		this.icon = new Gtk.Image.from_icon_name("open-menu-symbolic", Gtk.IconSize.MENU);
 		Gtk.EventBox settings_event = new Gtk.EventBox();
 		settings_event.add(icon);
@@ -524,6 +527,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public void set_babe_stacks()
 	{
 		media_stack= new Gtk.Stack();
+		
         media_stack.set_vexpand(true);//main list
         media_stack.set_vexpand(true);//babes list
         media_stack.set_vexpand(true);//playlists list		
@@ -867,6 +871,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	private void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
 	{
 		previous_model=model;
+					
+
 		model=treeview.get_model();
 		
 
@@ -903,7 +909,6 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			}
 				return true;
 		});		
-				
     }		
 	
 	public bool test(string testing)
@@ -921,7 +926,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		Gtk.TreePath path=new Gtk.TreePath();
 		string song_uri, title_r, artist_r,album_r; //to avoid problems with global string of title, artist and album and song 
 		if (event.type == Gdk.EventType.BUTTON_PRESS  &&  event.button == 3)
-		{
+		{					
+			
 			var selection = treeview.get_selection();
 			if(treeview.get_path_at_pos((int)event.x,(int)event.y,out path,null, null, null))
 			{
@@ -934,9 +940,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 						2, out song_uri,
 						3, out album_r);
 						
-						set_list_action(song_uri);
+						set_list_action(song_uri, iter, model);
 						menu.popup(null,null,null,event.button, event.time);
-				print ("Single right click on the tree view: "+title_r+" +++ "+artist_r+" \n");					
+				print ("Single right click on the tree view: "+title_r+" +++ "+artist_r+" \n");		
+						
 				}
 				    
 				
@@ -949,7 +956,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			
 	}	
 		
-	public void set_list_action(string line)
+	public void set_list_action(string line, Gtk.TreeIter iter, Gtk.TreeModel model )
 	{
 	menu = new Gtk.Menu();
 
@@ -964,6 +971,18 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		add_babe(iter);
 	});
 	item2.activate.connect(()=>{
+		var list_store=get_liststore(model);
+		
+			if(list_store.remove(iter))
+			{
+				print("Removing song from list\n");
+			}
+			else
+			{
+				print("Couldn't remove song from list\n'");
+
+			}			
+		
 		print("accion#2");
 	});
 	
@@ -984,9 +1003,32 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	menu.show_all();
 	}
 	
+	public Gtk.ListStore get_liststore(Gtk.TreeModel model)
+	{
+		
+		if(model==main_list)
+		{
+			return main_list;
+		}else if(model==babes_list)
+		{
+			return babes_list;
+		}else if(model==queue_list)
+		{
+			return queue_list;
+		}else
+		{return null;
+		}
+		
+	}
+	
 	public void start_playback_actions()
 	{
+			
+
 		babe_stream.uri(song);
+		string lyrics=babe_lyric.fetch_lyrics(title,album,artist);
+		print(lyrics+"\n");
+		info_box_label.label=lyrics;
 		play_icon.set_from_icon_name("media-playback-pause-symbolic", Gtk.IconSize.MENU);
 		update_status();
 		update_cover();
@@ -1050,11 +1092,18 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		});					
 	}
 	
+	public void play_queue()
+	{
+		print("There are: "+queue_c.to_string()+" songs in queue");
+		model=queue_list_view.get_model();
+	
+			
+		queue_c--;
+	}
+	
 	public void get_next_song()
 	{	
-		var model2=model;
-		
-			
+				
 		if(model==queue_list)	
 		{
 			if(queue_list.remove(iter))
@@ -1065,23 +1114,27 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			{
 				model=previous_model;
 				iter=iter_aux;
-			}
-			
+			}			
 		}
 		
-		
+		if(queue_c>0)
+		{
+			play_queue();
+			
+		}
 		if(!(model.iter_next (ref iter)))
 		{
 			model.get_iter_first(out iter);
 		}
+		
+		
 			model.get (iter,
                             4, out title,
 							1, out artist,
 							2, out song,
 							3, out album);
 							
-							
-							
+					
 		print("Playing next song->\n");
 		print("Upcoming song: "+title+"\n");
 		start_playback_actions();	
