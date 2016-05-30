@@ -1,4 +1,5 @@
 using Gtk;
+using TagLib;
 using BabeList;
 
 namespace BabeList
@@ -24,14 +25,39 @@ namespace BabeList
 			this.add (main_list_view);
 		}
 		
-		public void populate()
+		public void populate(string uri)
+		{
+					
+			var file = GLib.File.new_for_uri (uri);
+
+if (file.query_exists() )
 		{
 			main_list.append (out iter);
-			main_list.set (iter, 0, "camilo", 1, "higuita", 2, "rodriguez", 3,"rivera",4,"restrepo");
+			main_list.set (iter, 0, get_song_info(uri).tag.title+"\nby "+ get_song_info(uri).tag.artist, 1, get_song_info(uri).tag.artist, 2, uri, 3,get_song_info(uri).tag.album,4,get_song_info(uri).tag.title);
+           print(" existe");
+        }else
+        {print(" no existe");
+			
+		}
+			
+			
+		
 			
 		}
 		
-				
+		public TagLib.File get_song_info(string uri)//it actually turn a uri into a path to be able to get the tags
+		{
+					
+			var gfile = GLib.File.new_for_uri (uri);
+			string nm=gfile.get_path() ;
+			var info =  new TagLib.File(nm);
+			return info;
+		}	
+		
+		public Gtk.TreeView get_treeview()
+		{
+			return main_list_view;
+		}	
 	}
 	
 	
@@ -44,10 +70,18 @@ public static int main(string[] args)
 Gtk.init(ref args);
 var window = new Gtk.Window();
 BList as= new BList();
-as.populate();
+
+//as.get_treeview().set_grid_lines (TreeViewGridLines.BOTH);
 as.show_all();
 var caja = new Gtk.Box(Gtk.Orientation.VERTICAL,0);
+var entry = new Gtk.Entry();
+entry.set_placeholder_text("Ingresar");
+entry.activate.connect(()=>{
+	as.populate(entry.get_text());
+	
+	});
 caja.add(as);
+caja.pack_end(entry);
 window.add(caja);
 window.title="first app";
 window.show_all();
