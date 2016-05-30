@@ -1,7 +1,5 @@
 using Gtk;
 using TagLib;
-using BabeList;
-using BabeStream;
 
 namespace BabeList
 {
@@ -12,7 +10,7 @@ namespace BabeList
 
 public class BList : Gtk.ScrolledWindow
 {
-	private Stream stream; 
+	
 	private Gtk.ListStore main_list;
 	private Gtk.CellRendererText main_list_cell;
 	private Gtk.TreeView main_list_view;
@@ -22,8 +20,8 @@ public class BList : Gtk.ScrolledWindow
 	{			
 			
 		Object(hadjustment: null, vadjustment: null);
-		 Gtk.drag_dest_set (this,Gtk.DestDefaults.ALL, targets, Gdk.DragAction.COPY);
-this.drag_data_received.connect(on_drag_data_received);
+		Gtk.drag_dest_set (this,Gtk.DestDefaults.ALL, targets, Gdk.DragAction.COPY);
+		this.drag_data_received.connect(on_drag_data_received);
 
 		main_list = new Gtk.ListStore (5, typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
 		main_list_cell = new Gtk.CellRendererText ();
@@ -31,16 +29,20 @@ this.drag_data_received.connect(on_drag_data_received);
 
 		main_list_view.insert_column_with_attributes (-1, "Title", main_list_cell, "text", 0);
 			
+		main_list_view.set_grid_lines (TreeViewGridLines.BOTH);
+		main_list_view.set_reorderable(true);
+		main_list_view.set_headers_visible(false);
+		main_list_view.set_enable_search(true);
+		
 		this.set_min_content_height(200);
 		this.set_policy (PolicyType.AUTOMATIC, PolicyType.AUTOMATIC);
 		this.add (main_list_view);
-		stream = new Stream();
+		
 	}
 		
 	public async void populate(string uri)
-	{					
-		 		
-    var file = GLib.File.new_for_uri (uri); //check if file exists
+	{	 		
+		var file = GLib.File.new_for_uri (uri); //check if file exists
 		var type = GLib.ContentType.guess(uri, null,null);	//check if file is audio file	
 		
 		if (file.query_exists()&& type.contains("audio"))
@@ -72,24 +74,7 @@ this.drag_data_received.connect(on_drag_data_received);
 		return main_list;
 	}
 		
-public void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
-	{
-		Gtk.TreeIter iter;
-			
-		string title, artist, song, album;
-		var model=treeview.get_model();
 
-        if (treeview.model.get_iter (out iter, path)) {
-		model.get (iter,
-                        4, out title,
-						1, out artist,
-						2, out song,
-						3, out album);
-
-		stream.uri(song);
-        }
-
-    }
     
     private async void on_drag_data_received (Gdk.DragContext drag_context, int x, int y, 
                                         Gtk.SelectionData data, uint info, uint time) 
@@ -100,7 +85,7 @@ public void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.Tre
 			var file = GLib.File.new_for_uri (uri);
 			if(file.query_file_type (0) == GLib.FileType.REGULAR ) 
 			{
-				as.populate (uri);
+				populate (uri);
 			}
 			if(file.query_file_type (0) == GLib.FileType.DIRECTORY )
 			{
@@ -113,7 +98,7 @@ public void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.Tre
 					while ((file_info = enumerator.next_file ()) != null) 
 					{        
 						GLib.File child = enumerator.get_child (file_info);
-						as.populate (child.get_uri());				
+						populate (child.get_uri());				
 					}
 
 				} catch (Error e)
@@ -133,39 +118,3 @@ public void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.Tre
 
 
 
-BList as ;
-
-
-
-public static int main(string[] args)
-{
-Gtk.init(ref args);
-Gst.init(ref args);
-var window = new Gtk.Window();
-as = new BList();
-
-as.get_treeview().set_grid_lines (TreeViewGridLines.BOTH);
-		as.get_treeview().set_reorderable(true);
-		as.get_treeview().set_headers_visible(false);
-as.get_treeview().set_enable_search(true);
-
-as.get_treeview().row_activated.connect(as.on_row_activated);
-
-as.show_all();
-var caja = new Gtk.Box(Gtk.Orientation.VERTICAL,0);
-var entry = new Gtk.Entry();
-entry.set_placeholder_text("Ingresar");
-entry.activate.connect(()=>{
-	as.populate(entry.get_text());
-	
-	});
-	
-caja.add(as);
-caja.pack_end(entry);
-window.add(caja);
-window.title="first app";
-window.show_all();
-
-Gtk.main();
-	return 0;
-}
