@@ -3,20 +3,16 @@ using TagLib;
 using BabeList;
 using BabeStream;
 
-
-
 namespace BabeList
 {
-	
 	
  private const Gtk.TargetEntry[] targets = {
         {"text/uri-list",0,0}
     };
 
-
 public class BList : Gtk.ScrolledWindow
 {
-	private Stream stream;
+	private Stream stream; 
 	private Gtk.ListStore main_list;
 	private Gtk.CellRendererText main_list_cell;
 	private Gtk.TreeView main_list_view;
@@ -41,10 +37,12 @@ this.drag_data_received.connect(on_drag_data_received);
 		stream = new Stream();
 	}
 		
-	public void populate(string uri)
+	public async void populate(string uri)
 	{					
-		var file = GLib.File.new_for_uri (uri); //check if file exists
+		 		
+    var file = GLib.File.new_for_uri (uri); //check if file exists
 		var type = GLib.ContentType.guess(uri, null,null);	//check if file is audio file	
+		
 		if (file.query_exists()&& type.contains("audio"))
 		{
 			main_list.append (out iter);
@@ -93,16 +91,37 @@ public void on_row_activated (Gtk.TreeView treeview , Gtk.TreePath path, Gtk.Tre
 
     }
     
-    private void on_drag_data_received (Gdk.DragContext drag_context, int x, int y, 
+    private async void on_drag_data_received (Gdk.DragContext drag_context, int x, int y, 
                                         Gtk.SelectionData data, uint info, uint time) 
     {
         //loop through list of URIs
-        foreach(string uri in data.get_uris ()){
-            string file = uri.replace("file://","").replace("file:/","");
-            file = Uri.unescape_string (file);
+        foreach(string uri in data.get_uris ())
+        {
+			var file = GLib.File.new_for_uri (uri);
+			if(file.query_file_type (0) == GLib.FileType.REGULAR ) 
+			{
+				as.populate (uri);
+			}
+			if(file.query_file_type (0) == GLib.FileType.DIRECTORY )
+			{
+				print("es un directorio");
+				try 
+				{
+					var directory = GLib.File.new_for_uri (uri);			
+					var enumerator = directory.enumerate_children (FileAttribute.STANDARD_NAME, 0);
+					FileInfo file_info;
+					while ((file_info = enumerator.next_file ()) != null) 
+					{        
+						GLib.File child = enumerator.get_child (file_info);
+						as.populate (child.get_uri());				
+					}
 
-            //add file to tree view
-            as.populate (uri);
+				} catch (Error e)
+				{
+					stderr.printf ("Error: %s\n", e.message);
+      
+				} 				
+			}
         }
 
         Gtk.drag_finish (drag_context, true, false, time);
