@@ -11,7 +11,7 @@ sudo ln -s /usr/share/vala/vapi/gee-0.8.vapi /usr/share/vala/vapi/gee-1.0.vapi
 
 ***Compile:***
 
-valac --pkg gstreamer-1.0 --pkg gtk+-3.0 --pkg taglib_c --pkg gee-1.0 --pkg libxml-2.0 --pkg libsoup-2.4 --pkg libnotify babe.vala stream.vala lastfm.vala widgets.vala LyricFetcher.vala
+valac --pkg gstreamer-1.0 --pkg gtk+-3.0 --pkg taglib_c --pkg gee-1.0 --pkg libxml-2.0 --pkg libsoup-2.4 --pkg libnotify babe.vala stream.vala lastfm.vala widgets.vala LyricFetcher.vala list.vala
 
 ***and run:***
 
