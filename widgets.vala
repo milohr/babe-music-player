@@ -106,7 +106,6 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	private Gtk.Box info_view ;
 	private ScrolledWindow info_list_scroll;
 	//status bar
-	private Gtk.FileChooserDialog chooser;
 	public Gtk.ActionBar statusbar;
 
 	public Gtk.Label status_label;
@@ -163,7 +162,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		set_babe_statusbar();
 		set_babe_playback_box();
 		set_babe_style();
-		
+		get_babe_list();
 
 		/***
 		**SETUP HEADER WIDGETS
@@ -176,7 +175,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		open_event.add(open_icon);
 		open_icon.set_tooltip_text ("Open...");
 		open_event.button_press_event.connect (() => {
-					on_open();
+					main_list.on_open();
 					return true;
 		});
 
@@ -384,7 +383,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		op2.activate.connect(() => {
 			//babe_stream.set_state(Gst.State.NULL);
 			main_list.get_liststore().clear();
-			media_stack.set_visible_child_name("add");
+			//media_stack.set_visible_child_name("add");
 
 		});//empty the babe'd list
 		var caja = new Gtk.Box(Gtk.Orientation.VERTICAL,0);
@@ -437,14 +436,14 @@ info_list_scroll.set_min_content_height(200);
         media_stack.set_vexpand(true);//info list
 
 		//image holder to add music
-		add_music_img = new Gtk.Image();
+		/*add_music_img = new Gtk.Image();
 		add_music_img.set_from_file("img/add.png");
 		add_music_event = new Gtk.EventBox();
 		add_music_event.add(add_music_img);
 		add_music_event.button_press_event.connect (() => {
 					on_open();
 					return true;
-		});
+		});*/
 
 		//set up babe view modes
 		media_stack.add_named(add_music_event, "add");
@@ -455,9 +454,9 @@ info_list_scroll.set_min_content_height(200);
 		media_stack.add_named(info_list_scroll, "info");
 
 		//start by default empty list
-		media_stack.set_visible_child_name("add");
+		//media_stack.set_visible_child_name("add");
 		//get the babe list
-		get_babe_list();
+		
 		list_selected(main_list.get_treeview());
 		list_selected(queue_list.get_treeview());
 		list_selected(babes_list.get_treeview());
@@ -468,7 +467,7 @@ info_list_scroll.set_min_content_height(200);
 			{
 				//babe_icon_event.set_sensitive(true);
 				print ("babe_list\n");
-				media_stack.set_visible_child_name("add");
+				media_stack.set_visible_child_name("list");
 				list_int=1;
 			}
 			if(row==babe_info)
@@ -624,43 +623,7 @@ info_list_scroll.set_min_content_height(200);
 	}
 
 
-	public void on_open()
-	{
-	 	chooser = new Gtk.FileChooserDialog (
-				"Select your favorite file", this, Gtk.FileChooserAction.OPEN,
-				"_Cancel",
-				Gtk.ResponseType.CANCEL,
-				"_Open",
-				Gtk.ResponseType.ACCEPT);
-
-		chooser.select_multiple = true;
-		Gtk.FileFilter filter = new Gtk.FileFilter ();
-		filter.set_filter_name ("Audio");
-		filter.add_pattern ("*.mp3");
-		filter.add_pattern ("*.flac");
-		chooser.add_filter (filter);
-
-		if (chooser.run () == Gtk.ResponseType.ACCEPT)
-		{
-			SList<string> uris = chooser.get_uris ();
-			//stdout.printf ("Selection on_open:\n");
-			foreach (unowned string uri in uris)
-			{
-				main_list.populate(uri);
-			}
-			media_stack.set_visible_child_name("list");
-			babe_sidebar.row_activated.connect ((row => {
-			if(row==babe_list)
-			{
-				print ("babe_list\n");
-				media_stack.set_visible_child_name("list");
-			}
-			}));
-		}
-
-		chooser.close ();
-
-	}
+	
 
 	public TagLib.File get_song_info(string uri)//it actually turn a uri into a path to be able to get the tags
 	{
@@ -857,17 +820,23 @@ info_list_scroll.set_min_content_height(200);
 		song=line;
 		add_babe(iter);
 	});
+	
+	
+	
 	item2.activate.connect(()=>{
 		var list_store=get_liststore(model);
 
 			if(list_store.remove(iter))
 			{
 				print("Removing song from list\n");
+				
 			}
 			else
 			{
 				print("Couldn't remove song from list\n'");
-
+get_BList_object(model).modify_c(get_BList_object(model).get_c()-1);
+				int m=get_BList_object(model).get_c();
+				print(m.to_string()+" y ahora seria: "+(m-1).to_string());
 			}
 
 		print("accion#2");
@@ -902,6 +871,24 @@ info_list_scroll.set_min_content_height(200);
 		}else if(model==queue_list.get_liststore())
 		{
 			return queue_list.get_liststore();
+		}else
+		{return null;
+		}
+
+	}
+	
+	public BList get_BList_object(Gtk.TreeModel model)
+	{
+
+		if(model==main_list.get_liststore())
+		{
+			return main_list;
+		}else if(model==babes_list.get_liststore())
+		{
+			return babes_list;
+		}else if(model==queue_list.get_liststore())
+		{
+			return queue_list;
 		}else
 		{return null;
 		}
@@ -1029,6 +1016,8 @@ public async void get_lyrics()
 		print("Playing next song->\n");
 		print("Upcoming song: "+title+"\n");
 		start_playback_actions();
+				queue_list.modify_c(queue_c);
+
 
 	}
 
