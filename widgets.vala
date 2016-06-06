@@ -22,8 +22,9 @@ using BabeStream;
 using CoverArt;
 using BabeLyric;
 using BabeList;
-
+using BabePlayList;
 namespace BabeWidgets {
+const string playlist_path="./Playlist/";
 
 public class BabeWindow : Gtk.Window //creates main window with all widgets alltogether...not ideal but...
 {
@@ -32,7 +33,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public BList main_list;
 	public BList queue_list;
 	public BList babes_list;
-	public BList playlist_list;
+	public BPlayList playlist_list;
 	public LyricsManiaFetcher babe_lyric;
 	public int queue_c=0;
 	public int c=0;	//number of songs on the babed list
@@ -76,9 +77,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public Gtk.Label info_box_label;
 	public Gtk.Box info_box;
 	public Gtk.Menu menu;
-	public Gtk.EventBox add_music_event;
-	public Gtk.Image add_music_img;
-
+	
 	//playback box
 	public Gtk.Box playback_buttons;
 	public Gtk.Scale progressbar;
@@ -138,6 +137,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 
 	public BabeWindow()
 	{
+		this.get_style_context().add_class("babe-window");
 		this.title = "Babe...";
 		iter_aux = Gtk.TreeIter();
 		this.window_position = WindowPosition.CENTER;
@@ -154,15 +154,17 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
         artwork = new LastFm(); //this is to get the album art
         babe_lyric= new LyricsManiaFetcher();
         
-        main_list = new BList();
-        babes_list=new BList();
-        queue_list=new BList();
+        main_list = new BList(false,"");
+        babes_list=new BList(true,".Babes.txt");
+        queue_list=new BList(false,"");
+        playlist_list=new BPlayList();
+		
         //Sets everything we need up
 		set_babe_sidebar();
 		set_babe_statusbar();
 		set_babe_playback_box();
 		set_babe_style();
-		get_babe_list();
+		
 
 		/***
 		**SETUP HEADER WIDGETS
@@ -411,14 +413,14 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public void set_babe_lists()
 	{
 		
-info_box_label=new Gtk.Label("No song");
+		info_box_label=new Gtk.Label("No song");
 
 		info_view=new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 		info_view.add(info_box_label);
 
-info_list_scroll.set_min_content_height(200);
+		info_list_scroll.set_min_content_height(200);
 		info_list_scroll.set_policy (PolicyType.AUTOMATIC, PolicyType.AUTOMATIC);
-       info_list_scroll.add (info_view);
+		info_list_scroll.add (info_view);
 
 
         set_babe_stacks();
@@ -446,7 +448,6 @@ info_list_scroll.set_min_content_height(200);
 		});*/
 
 		//set up babe view modes
-		media_stack.add_named(add_music_event, "add");
 		media_stack.add_named(main_list, "list");
 		media_stack.add_named(playlist_list, "playlist");
 		media_stack.add_named(babes_list, "babes");
@@ -460,6 +461,7 @@ info_list_scroll.set_min_content_height(200);
 		list_selected(main_list.get_treeview());
 		list_selected(queue_list.get_treeview());
 		list_selected(babes_list.get_treeview());
+		list_selected(playlist_list.get_treeview());
 
 		//catch sidebar selection
 		babe_sidebar.row_activated.connect ((row => {
@@ -533,8 +535,8 @@ info_list_scroll.set_min_content_height(200);
                 });
 
 		add_playlist_entry.activate.connect (() => {
-			//string str = add_playlist_entry.get_text ();
-			//stdout.printf ("%s\n", str);
+			string str = add_playlist_entry.get_text();
+			playlist_list.add_playlist(str);
 			add_playlist_entry.set_text("");
 			status_label.label="Playlist Created";
 		});
@@ -716,13 +718,143 @@ info_list_scroll.set_min_content_height(200);
 		//right click event
 		view.add_events (Gdk.EventType.BUTTON_PRESS);
 		view.button_press_event.connect (on_right_click);
-
 		//double click event
 		view.row_activated.connect(this.on_row_activated);
 		//var selection = view.get_selection ();
 		//selection.changed.connect (get_selection);
 	}
 
+
+	public bool on_right_click (Gtk.Widget widget, Gdk.EventButton event) //catches the right lcick event
+	{		
+		var treeview = (Gtk.TreeView) widget;
+		Gtk.TreePath path=new Gtk.TreePath();
+		string song_uri, title_r, artist_r,album_r; //to avoid problems with global string of title, artist and album and song
+		if (event.type == Gdk.EventType.BUTTON_PRESS  &&  event.button == 3)
+		{
+
+			//var selection = main_list_view.get_selection();
+			if(treeview.get_path_at_pos((int)event.x,(int)event.y,out path,null, null, null))
+			{
+				var model=treeview.get_model();
+				if (treeview.model.get_iter (out iter, path)) {
+						model.get (iter,
+                        4, out title_r,
+						1, out artist_r,
+						2, out song_uri,
+						3, out album_r);
+
+						set_list_action(song_uri, iter, model);
+						menu.popup(null,null,null,event.button, event.time);
+				print ("Single right click on the tree view: "+title_r+" +++ "+artist_r+" \n");
+
+				}
+
+
+			}
+			return true;
+		}else
+		{
+			return false;
+		}
+
+	}
+
+	public void set_list_action(string line, Gtk.TreeIter iter, Gtk.TreeModel model )
+	{
+	menu = new Gtk.Menu();
+
+	var item1= new Gtk.MenuItem.with_label("Babe it \xe2\x99\xa1");
+	var item2= new Gtk.MenuItem.with_label("Remove it");
+	var item3= new Gtk.MenuItem.with_label("Queue it");
+	var item4= new Gtk.MenuItem.with_label("Add to playlist");
+
+	var submenu= new Gtk.Menu();
+	add_to_playlist_submenu(submenu, line);
+	submenu.show_all();
+	item4.set_submenu(submenu);
+	
+	item1.activate.connect(()=>{
+		print("accion#1");
+		song=line;
+		add_babe(iter);
+	});
+	
+	
+	
+	item2.activate.connect(()=>{
+		var list_store=get_liststore(model);
+
+			list_store.remove(iter);
+			get_BList_object(model).modify_c();
+
+
+		print("accion#2");
+	});
+
+	item3.activate.connect(()=>{
+		print("accion#3");
+		song=line;
+		add_queue(iter);
+	});
+	item4.activate.connect(()=>{
+		print("accion#4");
+	});
+	
+	
+	menu.append(item1);
+	menu.append(item2);
+	menu.append(item3);
+	menu.append(item4);
+	menu.show_all();
+	}
+	
+	private void add_to_playlist_submenu(Gtk.Menu submenu, string line)
+	{
+		var directory = GLib.File.new_for_path (playlist_path);
+		try 
+		{					
+			var enumerator = directory.enumerate_children (FileAttribute.STANDARD_NAME, 0);
+			FileInfo file_info;
+			while ((file_info = enumerator.next_file ()) != null) 
+			{        
+				GLib.File path = enumerator.get_child (file_info);
+				if( file_info.get_name ().has_suffix(".babe"))
+				{	
+					var item= new Gtk.MenuItem.with_label(file_info.get_name ().replace(".babe",""));
+					submenu.append(item);
+					item.activate.connect(()=>{
+					print(item.get_label());
+					add_to_playlist(line, item.get_label()+".babe");
+	});
+				}
+				
+				
+					
+			}
+
+		} catch (GLib.Error e)
+		{
+			stderr.printf ("Error: %s\n", e.message);
+      
+		} 			
+        
+		
+	}
+	
+	public void add_to_playlist(string song_uri, string path )
+	{
+			string full_path=playlist_path+path;
+			FileStream file = FileStream.open (full_path,"a");
+			assert (file != null);
+			file.puts (song_uri+"\n");
+
+			status_label.label="Song added!";
+
+			notify("Song added to playlist!",get_song_info(song_uri).tag.title+" \xe2\x99\xa1 "+get_song_info(song_uri).tag.artist);
+				
+	}
+	
 	private void on_row_activated (Gtk.TreeView treeview, Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
 	{
 		previous_model=model;
@@ -769,96 +901,7 @@ info_list_scroll.set_min_content_height(200);
 		return true;
 	}
 
-	public bool on_right_click (Gtk.Widget widget, Gdk.EventButton event) //catches the right lcick event
-	{		
-		var treeview = (Gtk.TreeView) widget;
-		Gtk.TreeIter iter;
-		Gtk.TreePath path=new Gtk.TreePath();
-		string song_uri, title_r, artist_r,album_r; //to avoid problems with global string of title, artist and album and song
-		if (event.type == Gdk.EventType.BUTTON_PRESS  &&  event.button == 3)
-		{
-
-			var selection = treeview.get_selection();
-			if(treeview.get_path_at_pos((int)event.x,(int)event.y,out path,null, null, null))
-			{
-						model=treeview.get_model();
-
-				 if (treeview.model.get_iter (out iter, path)) {
-						model.get (iter,
-                        4, out title_r,
-						1, out artist_r,
-						2, out song_uri,
-						3, out album_r);
-
-						set_list_action(song_uri, iter, model);
-						menu.popup(null,null,null,event.button, event.time);
-				print ("Single right click on the tree view: "+title_r+" +++ "+artist_r+" \n");
-
-				}
-
-
-			}
-			return true;
-		}else
-		{
-			return false;
-		}
-
-	}
-
-	public void set_list_action(string line, Gtk.TreeIter iter, Gtk.TreeModel model )
-	{
-	menu = new Gtk.Menu();
-
-	var item1= new Gtk.MenuItem.with_label("Babe it \xe2\x99\xa1");
-	var item2= new Gtk.MenuItem.with_label("Remove it");
-	var item3= new Gtk.MenuItem.with_label("Queue it");
-	var item4= new Gtk.MenuItem.with_label("Add to playlist");
-
-	item1.activate.connect(()=>{
-		print("accion#1");
-		song=line;
-		add_babe(iter);
-	});
 	
-	
-	
-	item2.activate.connect(()=>{
-		var list_store=get_liststore(model);
-
-			if(list_store.remove(iter))
-			{
-				print("Removing song from list\n");
-				
-			}
-			else
-			{
-				print("Couldn't remove song from list\n'");
-get_BList_object(model).modify_c(get_BList_object(model).get_c()-1);
-				int m=get_BList_object(model).get_c();
-				print(m.to_string()+" y ahora seria: "+(m-1).to_string());
-			}
-
-		print("accion#2");
-	});
-
-	item3.activate.connect(()=>{
-		print("accion#3");
-		song=line;
-		add_queue(iter);
-	});
-	item4.activate.connect(()=>{
-		print("accion#4");
-	});
-
-
-	menu.append(item1);
-	menu.append(item2);
-	menu.append(item3);
-	menu.append(item4);
-	menu.show_all();
-	}
-
 	public Gtk.ListStore get_liststore(Gtk.TreeModel model)
 	{
 
@@ -871,7 +914,10 @@ get_BList_object(model).modify_c(get_BList_object(model).get_c()-1);
 		}else if(model==queue_list.get_liststore())
 		{
 			return queue_list.get_liststore();
-		}else
+		}else if(model==playlist_list.get_liststore())
+		{
+			return playlist_list.get_liststore();
+		}		else
 		{return null;
 		}
 
@@ -1016,7 +1062,6 @@ public async void get_lyrics()
 		print("Playing next song->\n");
 		print("Upcoming song: "+title+"\n");
 		start_playback_actions();
-				queue_list.modify_c(queue_c);
 
 
 	}
@@ -1134,38 +1179,7 @@ public async void get_lyrics()
 		set_babe_cover(get_babe_cover());
 	}
 
-	public void get_babe_list()
-	{
-		//babes_list.clear();
-		//var file = File.new_for_path (".Babes.txt");
-		int c=0;
-		var file = GLib.File.new_for_path (".Babes.txt");
-
-		if (!(file.query_exists()))
-		{
-           file.create (FileCreateFlags.NONE);
-        }
-		var dis = new DataInputStream (file.read());
-        string line;
-        // Read lines until end of file (null) is reached
-        while ((line = dis.read_line (null)) != null) {
-            //stdout.printf ("%s\n", line);
-            file=GLib.File.new_for_uri(line);
-            if(file.query_exists())
-            {
-			babes_list.populate(line);
-			c++;
-			}else
-			{
-				print("File missing: "+line+"\n");
-				if(babe_int==1)
-				{
-				add_playlist_popover.show_all();
-				}
-			}
-        }
-		babe_babes.set_tooltip_text (c.to_string()+" Babes <3");
-	}
+	
 
 	public void set_babe_style()
 	{
