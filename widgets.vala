@@ -23,6 +23,7 @@ using CoverArt;
 using BabeLyric;
 using BabeList;
 using BabePlayList;
+
 namespace BabeWidgets {
 const string playlist_path="./Playlist/";
 
@@ -461,7 +462,6 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		list_selected(main_list.get_treeview());
 		list_selected(queue_list.get_treeview());
 		list_selected(babes_list.get_treeview());
-		list_selected(playlist_list.get_treeview());
 
 		//catch sidebar selection
 		babe_sidebar.row_activated.connect ((row => {
@@ -485,6 +485,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			{
 				print ("babe_playlist\n");
 				media_stack.set_visible_child_name("playlist");
+				playlist_list.show_main_list();
+				
+				list_selected(playlist_list.get_treeview());
+
 				status_label.label="000 Playlists";
 				playlist_int=1;
 			}
@@ -848,9 +852,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			FileStream file = FileStream.open (full_path,"a");
 			assert (file != null);
 			file.puts (song_uri+"\n");
-
+			
 			status_label.label="Song added!";
-
+			playlist_list.get_BList().populate(song_uri);
 			notify("Song added to playlist!",get_song_info(song_uri).tag.title+" \xe2\x99\xa1 "+get_song_info(song_uri).tag.artist);
 				
 	}
@@ -1048,7 +1052,10 @@ public async void get_lyrics()
 
 		if(!(model.iter_next (ref iter)))
 		{
-			model.get_iter_first(out iter);
+			if(!(model.get_iter_first(out iter)))
+			{
+				babe_stream.set_state(State.NULL);
+			}
 		}
 
 

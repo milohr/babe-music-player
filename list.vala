@@ -1,6 +1,6 @@
 using Gtk;
 using TagLib;
-using BabeList;
+
 namespace BabeList
 {
 	
@@ -18,7 +18,10 @@ public class BList : Gtk.ScrolledWindow
 	private Gtk.FileChooserDialog chooser;
 	public Gtk.EventBox add_music_event;
 	public Gtk.Stack stack;
-	
+	public string title;
+	public string artist;
+	public string album;
+	public string song;
 	public BList(bool state, string playlist_path)//whether the list has to be populate from start//useful for saved playlists(true=populate/false=start empty, the path to the playlist)
 	{					
 		Object(hadjustment: null, vadjustment: null);
@@ -40,7 +43,6 @@ public class BList : Gtk.ScrolledWindow
 		main_list_view.set_headers_visible(false);
 		main_list_view.set_enable_search(true);		
 
-		
 		//var label=new Gtk.Label("Add Music");// use this in future if i can make it use the font wanted
 		
 		var add_music_img = new Gtk.Image();
@@ -70,7 +72,8 @@ public class BList : Gtk.ScrolledWindow
 		this.add(stack);
 	}
 		
-	
+
+
 	public void on_open()
 	{
 	 	chooser = new Gtk.FileChooserDialog (
