@@ -52,7 +52,6 @@ public class BPlayList : Gtk.ScrolledWindow
 		title= new Gtk.Label("");
 		stack=new Gtk.Stack();
 		stack.set_vexpand(true);//main list			
-		set_playlists();
 		stack.add_named(main_list_view, "list");
 		stack.set_visible_child_name("list");
 			
@@ -76,7 +75,13 @@ public class BPlayList : Gtk.ScrolledWindow
 		this.add(box);
 	}
 	
-
+	public void populate(string line, BList list )
+	{
+		main_list.append (out iter);
+		main_list.set (iter, 0, line.replace(".babe",""), 1,"./Playlist/"+line);
+		stack.add_named(list,line.replace(".babe",""));	
+		stack.set_vexpand(true);
+	}
 	
 	private void on_row_activated (Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
 	{
@@ -105,48 +110,7 @@ public class BPlayList : Gtk.ScrolledWindow
 		stack.set_visible_child_name("list");
 	}
 		
-	public void set_playlists()
-	{		
-		var directory = GLib.File.new_for_path (playlist_path);
-		 
-		if (!(directory.query_exists()))
-		{
-           		try
-           		{
-					directory.make_directory();
-				}catch(GLib.Error e)
-				{
-					print("clound't create Playlist dir");
-				}	
-        }
-        try 
-		{					
-			var enumerator = directory.enumerate_children (FileAttribute.STANDARD_NAME, 0);
-			FileInfo file_info;
-			while ((file_info = enumerator.next_file ()) != null) 
-			{        
-				GLib.File path = enumerator.get_child (file_info);
-				if( file_info.get_name ().has_suffix(".babe"))
-				{
-					main_list.append (out iter);
-					main_list.set (iter, 0, file_info.get_name ().replace(".babe",""), 1,"./Playlist/"+file_info.get_name ());
-					var playlist=new BList(true,"./Playlist/"+file_info.get_name ());
-					
-					stack.add_named(playlist, file_info.get_name ().replace(".babe",""));	
-					stack.set_vexpand(true);				
-							
-				}
-				
-				
-					
-			}
-
-		} catch (GLib.Error e)
-		{
-			stderr.printf ("Error: %s\n", e.message);
-      
-		} 			
-	}
+	
 	
 	
 		
@@ -170,15 +134,14 @@ public class BPlayList : Gtk.ScrolledWindow
 		
 	public Gtk.TreeView get_treeview()
 	{
-		var pl=get_BList();
-		var treeview=pl.get_treeview();
-		return treeview;
+		
+		return main_list_view;
 		
 	}	
 	
 	public Gtk.ListStore get_liststore()
 	{			
-		return liststore;
+		return main_list;
 	}
 		
 	public BList get_BList()

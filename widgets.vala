@@ -159,7 +159,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
         babes_list=new BList(true,".Babes.txt");
         queue_list=new BList(false,"");
         playlist_list=new BPlayList();
-		
+		set_playlists();
         //Sets everything we need up
 		set_babe_sidebar();
 		set_babe_statusbar();
@@ -845,7 +845,43 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
         
 		
 	}
-	
+	public void set_playlists()
+	{	string line;	
+		var directory = GLib.File.new_for_path (playlist_path);
+		 
+		if (!(directory.query_exists()))
+		{
+           		try
+           		{
+					directory.make_directory();
+				}catch(GLib.Error e)
+				{
+					print("clound't create Playlist dir");
+				}	
+        }
+        try 
+		{					
+			var enumerator = directory.enumerate_children (FileAttribute.STANDARD_NAME, 0);
+			FileInfo file_info;
+			while ((file_info = enumerator.next_file ()) != null) 
+			{      
+				
+				GLib.File path = enumerator.get_child (file_info);
+				if( file_info.get_name ().has_suffix(".babe"))
+				{
+					line=file_info.get_name ();  
+					var playlist=new BList(true,"./Playlist/"+file_info.get_name ());
+					playlist_list.populate(line, playlist);
+					list_selected(playlist.get_treeview());	
+				}
+			}
+
+		} catch (GLib.Error e)
+		{
+			stderr.printf ("Error: %s\n", e.message);
+      
+		} 			
+	}
 	public void add_to_playlist(string song_uri, string path )
 	{
 			string full_path=playlist_path+path;
