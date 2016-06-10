@@ -8,7 +8,7 @@ namespace BabeList
         {"text/uri-list",0,0}
     };
 
-public class BList : Gtk.ScrolledWindow
+public class BList : Gtk.ScrolledWindow 
 {
 	public int c;
 	private Gtk.ListStore main_list;
@@ -42,9 +42,15 @@ public class BList : Gtk.ScrolledWindow
 		main_list_view.set_reorderable(true);
 		main_list_view.set_headers_visible(false);
 		main_list_view.set_enable_search(true);		
-
+		main_list_view.row_activated.connect(this.on_row_activated);
 		//var label=new Gtk.Label("Add Music");// use this in future if i can make it use the font wanted
 		
+		/*
+		 * EVENTS
+		 * */
+		 this.add_events (Gdk.EventType.BUTTON_PRESS);
+		 main_list_view.add_events (Gdk.EventType.BUTTON_PRESS);
+		 
 		var add_music_img = new Gtk.Image();
 		add_music_img.set_from_file("img/add.png");
 		
@@ -72,7 +78,38 @@ public class BList : Gtk.ScrolledWindow
 		this.add(stack);
 	}
 		
+	private void on_row_activated (Gtk.TreeView treeview, Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
+	{
+		var model=treeview.get_model();
 
+        if (treeview.model.get_iter (out iter, path)) {
+		model.get (iter,
+                        4, out title,
+						1, out artist,
+						2, out song,
+						3, out album);
+      }
+      
+      //print(title+" by "+artist+" @ "+song);
+	}
+
+	
+	public string get_song()
+	{
+		return song;
+	}
+	public string get_artist()
+	{
+		return artist;
+	}
+	public string get_title()
+	{
+		return title;
+	}
+	public string get_album()
+	{
+		return album;
+	}
 
 	public void on_open()
 	{
@@ -238,11 +275,11 @@ public class BList : Gtk.ScrolledWindow
 			}
         }		
 	}
-public void clean_list()
-{
-	get_liststore().clear();
-	c=0;
-}
+	public void clean_list()
+	{
+		get_liststore().clear();
+		c=0;
+	}
 	
 }
 }

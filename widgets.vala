@@ -34,6 +34,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public BList main_list;
 	public BList queue_list;
 	public BList babes_list;
+	public BList playlist;
 	public BPlayList playlist_list;
 	public LyricsManiaFetcher babe_lyric;
 	public int queue_c=0;
@@ -458,10 +459,13 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		//start by default empty list
 		//media_stack.set_visible_child_name("add");
 		//get the babe list
-		
-		list_selected(main_list.get_treeview());
-		list_selected(queue_list.get_treeview());
-		list_selected(babes_list.get_treeview());
+		babes_list.button_press_event.connect (selected);
+		main_list.button_press_event.connect (selected);
+		babes_list.button_press_event.connect (selected);
+
+		main_list.get_treeview().button_press_event.connect (on_right_click);
+		queue_list.get_treeview().button_press_event.connect (on_right_click);
+		babes_list.get_treeview().button_press_event.connect (on_right_click);
 
 		//catch sidebar selection
 		babe_sidebar.row_activated.connect ((row => {
@@ -487,9 +491,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 				media_stack.set_visible_child_name("playlist");
 				playlist_list.show_main_list();
 				
-				list_selected(playlist_list.get_treeview());
-
-				status_label.label="000 Playlists";
+							status_label.label="000 Playlists";
 				playlist_int=1;
 			}
 			if(row==babe_babes)
@@ -870,9 +872,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 				if( file_info.get_name ().has_suffix(".babe"))
 				{
 					line=file_info.get_name ();  
-					var playlist=new BList(true,"./Playlist/"+file_info.get_name ());
+					 playlist=new BList(true,"./Playlist/"+file_info.get_name ());
 					playlist_list.populate(line, playlist);
-					list_selected(playlist.get_treeview());	
+					playlist.button_press_event.connect (selected);
+					playlist.get_treeview().button_press_event.connect (on_right_click);
 				}
 			}
 
@@ -882,6 +885,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
       
 		} 			
 	}
+	
+	
+	
 	public void add_to_playlist(string song_uri, string path )
 	{
 			string full_path=playlist_path+path;
@@ -890,9 +896,22 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			file.puts (song_uri+"\n");
 			
 			status_label.label="Song added!";
-			playlist_list.get_BList().populate(song_uri);
+			//playlist.populate(song_uri);
 			notify("Song added to playlist!",get_song_info(song_uri).tag.title+" \xe2\x99\xa1 "+get_song_info(song_uri).tag.artist);
 				
+	}
+	
+	public bool selected(Gtk.Widget widget, Gdk.EventButton event)
+	{
+		var list = (BList) widget;
+		song=list.get_song();
+		title=list.get_title();
+		artist=list.get_artist();
+		album=list.get_album();
+		start_playback_actions();
+		//babe_stream.uri(song);
+		
+		return true;
 	}
 	
 	private void on_row_activated (Gtk.TreeView treeview, Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
@@ -954,9 +973,9 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		}else if(model==queue_list.get_liststore())
 		{
 			return queue_list.get_liststore();
-		}else if(model==playlist_list.get_liststore())
+		}else if(model==playlist.get_liststore())
 		{
-			return playlist_list.get_liststore();
+			return playlist.get_liststore();
 		}		else
 		{return null;
 		}
