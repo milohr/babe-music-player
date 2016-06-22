@@ -22,6 +22,9 @@ public class BList : Gtk.ScrolledWindow
 	public string artist;
 	public string album;
 	public string song;
+	public string next_song;
+		private Gtk.TreeModel model;
+
 	public BList(bool state, string playlist_path)//whether the list has to be populate from start//useful for saved playlists(true=populate/false=start empty, the path to the playlist)
 	{					
 		Object(hadjustment: null, vadjustment: null);
@@ -80,7 +83,7 @@ public class BList : Gtk.ScrolledWindow
 		
 	private void on_row_activated (Gtk.TreeView treeview, Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
 	{
-		var model=treeview.get_model();
+		model=main_list_view.get_model();
 
         if (treeview.model.get_iter (out iter, path)) {
 		model.get (iter,
@@ -92,7 +95,36 @@ public class BList : Gtk.ScrolledWindow
       
       //print(title+" by "+artist+" @ "+song);
 	}
+	
+	public string get_next_song()
+	{
+		model=main_list_view.get_model();
+		
+		if(model.iter_next (ref iter))
+		{
+			model.get (iter,
+                            4, out title,
+							1, out artist,
+							2, out song,
+							3, out album);
 
+			print("Playing next song->\n");
+			print("Upcoming song: "+title+"\n");
+			return song;
+			
+		}else
+		{
+			
+			return "null";
+		}
+		
+				
+	}
+	
+	public BList get_BList_object()
+	{
+		return this;
+	}
 	
 	public string get_song()
 	{
@@ -280,7 +312,10 @@ public class BList : Gtk.ScrolledWindow
 		get_liststore().clear();
 		c=0;
 	}
-	
+	public void proff()
+	{
+		print("proof/!");
+	}
 }
 }
 /*

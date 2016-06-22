@@ -459,13 +459,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		//start by default empty list
 		//media_stack.set_visible_child_name("add");
 		//get the babe list
-		babes_list.button_press_event.connect (selected);
-		main_list.button_press_event.connect (selected);
-		babes_list.button_press_event.connect (selected);
-
-		main_list.get_treeview().button_press_event.connect (on_right_click);
-		queue_list.get_treeview().button_press_event.connect (on_right_click);
-		babes_list.get_treeview().button_press_event.connect (on_right_click);
+		
+		list_selected(main_list.get_treeview(), main_list.get_liststore());
+		list_selected(queue_list.get_treeview(), queue_list.get_liststore());
+		list_selected(babes_list.get_treeview(), babes_list.get_liststore());
 
 		//catch sidebar selection
 		babe_sidebar.row_activated.connect ((row => {
@@ -719,9 +716,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		}
 	}
 
-	public void list_selected(Gtk.TreeView view)//actions done to the current list selected
+	public void list_selected(Gtk.TreeView view, Gtk.ListStore list)//actions done to the current list selected
 	{
 		//right click event
+		
 		view.add_events (Gdk.EventType.BUTTON_PRESS);
 		view.button_press_event.connect (on_right_click);
 		//double click event
@@ -734,6 +732,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	public bool on_right_click (Gtk.Widget widget, Gdk.EventButton event) //catches the right lcick event
 	{		
 		var treeview = (Gtk.TreeView) widget;
+	
 		Gtk.TreePath path=new Gtk.TreePath();
 		string song_uri, title_r, artist_r,album_r; //to avoid problems with global string of title, artist and album and song
 		if (event.type == Gdk.EventType.BUTTON_PRESS  &&  event.button == 3)
@@ -750,7 +749,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 						2, out song_uri,
 						3, out album_r);
 
-						set_list_action(song_uri, iter, model);
+						set_list_action(song_uri, iter, model, treeview);
 						menu.popup(null,null,null,event.button, event.time);
 				print ("Single right click on the tree view: "+title_r+" +++ "+artist_r+" \n");
 
@@ -766,7 +765,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 
 	}
 
-	public void set_list_action(string line, Gtk.TreeIter iter, Gtk.TreeModel model )
+	public void set_list_action(string line, Gtk.TreeIter iter, Gtk.TreeModel model, Gtk.TreeView treeview )
 	{
 	menu = new Gtk.Menu();
 
@@ -789,10 +788,10 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 	
 	
 	item2.activate.connect(()=>{
-		var list_store=get_liststore(model);
+		var list_store=(Gtk.ListStore) treeview.get_model();
 
 			list_store.remove(iter);
-			get_BList_object(model).modify_c();
+		get_BList_object(model).modify_c();
 
 
 		print("accion#2");
@@ -874,8 +873,8 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 					line=file_info.get_name ();  
 					 playlist=new BList(true,"./Playlist/"+file_info.get_name ());
 					playlist_list.populate(line, playlist);
-					playlist.button_press_event.connect (selected);
-					playlist.get_treeview().button_press_event.connect (on_right_click);
+					list_selected(playlist.get_treeview(),playlist.get_liststore());					 
+
 				}
 			}
 
@@ -886,7 +885,20 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		} 			
 	}
 	
-	
+	public bool list_store(Gtk.Widget widget, Gdk.EventButton event)
+	{
+		if (event.type == Gdk.EventType.BUTTON_PRESS &&  event.button == 3)
+		{
+				print("oooooootyyyy");
+
+	}else
+	{
+		var list=(BList) widget;
+		list.proff();
+		var aux=list.get_liststore();
+	}
+		return true;
+	}
 	
 	public void add_to_playlist(string song_uri, string path )
 	{
@@ -899,19 +911,6 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 			//playlist.populate(song_uri);
 			notify("Song added to playlist!",get_song_info(song_uri).tag.title+" \xe2\x99\xa1 "+get_song_info(song_uri).tag.artist);
 				
-	}
-	
-	public bool selected(Gtk.Widget widget, Gdk.EventButton event)
-	{
-		var list = (BList) widget;
-		song=list.get_song();
-		title=list.get_title();
-		artist=list.get_artist();
-		album=list.get_album();
-		start_playback_actions();
-		//babe_stream.uri(song);
-		
-		return true;
 	}
 	
 	private void on_row_activated (Gtk.TreeView treeview, Gtk.TreePath path, Gtk.TreeViewColumn column) //double click starts playback
