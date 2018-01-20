@@ -66,7 +66,7 @@ public class BList : Gtk.ScrolledWindow
 		
 		stack=new Gtk.Stack();
 		stack.set_vexpand(true);//main list
-        stack.set_vexpand(true);//add music event/message		
+        	stack.set_vexpand(true);//add music event/message
 		stack.add_named(add_music_event, "add");
 		stack.add_named(main_list_view, "list");
 

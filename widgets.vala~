@@ -153,6 +153,7 @@ public class BabeWindow : Gtk.Window //creates main window with all widgets allt
 		this.cover.set_from_file ("img/babe.png");
 
         babe_stream=new BabeStream.Stream(); //this is the main pipeline for 
+streaming
         artwork = new LastFm(); //this is to get the album art
         babe_lyric= new LyricsManiaFetcher();
         
